@@ -14,8 +14,9 @@ namespace Modelee
     {
         private readonly Dictionary<string, JToken> _patchProperties;
         private readonly EntityConfig _entityConfig;
+        private readonly ModelBuilder<TEntity> _builder;
 
-        public bool IsNew
+        public bool HasKey
         {
             get
             {
@@ -28,7 +29,7 @@ namespace Modelee
             }
         }
 
-        public JToken Key => IsNew ? null : _patchProperties[_entityConfig.KeyPropertyName];
+        public JToken Key => HasKey ? null : _patchProperties[_entityConfig.KeyPropertyName];
 
         // IDictionary properties
         public int Count => _patchProperties.Count;
@@ -42,23 +43,23 @@ namespace Modelee
             _patchProperties = new Dictionary<string, JToken>(_entityConfig.CaseSensitive ?
                 StringComparer.Ordinal :
                 StringComparer.OrdinalIgnoreCase);
+
+            _builder = new ModelBuilder<TEntity>(_patchProperties, _entityConfig);
         }
 
         public void Patch(ref TEntity entity)
         {
-            entity = ModelBuilder.BuildFrom(this, entity);
+            entity = _builder.PatchModel(entity);
         }
 
         public TEntity Patch(TEntity entity)
         {
-            return ModelBuilder.BuildFrom(this, entity);
+            return _builder.PatchModel(entity);
         }
 
         public TEntity CreateEntity()
         {
-            var model = ModelBuilder.BuildFrom(this);
-
-            return model;
+            return _builder.BuildModel();
         }
 
         public IEnumerator<KeyValuePair<string, JToken>> GetEnumerator()

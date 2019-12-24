@@ -9,19 +9,40 @@ using Newtonsoft.Json.Linq;
 
 namespace Modelee.Builders
 {
-    internal static class ModelBuilder
+    internal class ModelBuilder<TEntity> where TEntity : class, new()
     {
-        public static TEntity BuildFrom<TEntity>(PatchObject<TEntity> patchObject, TEntity model = null)
-            where TEntity : class, new()
+        private readonly IDictionary<string, JToken> _patchData;
+        private readonly EntityConfig _config;
+
+        public ModelBuilder(IDictionary<string, JToken> patchData, EntityConfig config)
         {
-            var result = ModelBuilder.Build(patchObject, typeof(TEntity), model);
+            _patchData = patchData;
+            _config = config;
+        }
+
+        public TEntity BuildModel()
+        {
+            var result = BuildInternal(_patchData, typeof(TEntity), _config);
 
             return result as TEntity;
         }
 
-        private static object Build(IDictionary<string, JToken> data, Type type, object model = null)
+        public TEntity PatchModel(TEntity model)
+        {
+            var result = BuildInternal(_patchData, typeof(TEntity), _config, model);
+
+            return result as TEntity;
+        }
+
+        private object BuildInternal(IDictionary<string, JToken> data, Type type, object model)
         {
             var config = ConfigurationContainer.Instance.GetConfig(type);
+
+            return BuildInternal(data, type, config, model);
+        }
+
+        private object BuildInternal(IDictionary<string, JToken> data, Type type, EntityConfig config, object model = null)
+        {
             var properties = type.GetProperties();
             var missedRequiredProps = config.RequiredProperties.Except(data.Keys).ToArray();
 
@@ -185,7 +206,7 @@ namespace Modelee.Builders
                                 }
 
                                 // Pass stub object as origin value. If it's null, method will create a new one
-                                return ModelBuilder.Build(elementDataDictionary, elementType, elementOriginValue);
+                                return BuildInternal(elementDataDictionary, elementType, elementOriginValue);
                             }
 
                             return element.ToObject(elementType);
@@ -202,7 +223,7 @@ namespace Modelee.Builders
                         continue;
                     }
 
-                    newValue = JToken.FromObject(ModelBuilder.Build(newValue.ToObject<Dictionary<string, JToken>>(), property.PropertyType, currentValue));
+                    newValue = JToken.FromObject(BuildInternal(newValue.ToObject<Dictionary<string, JToken>>(), property.PropertyType, currentValue));
                 }
 
                 property.SetValue(model, newValue.ToObject(property.PropertyType));
@@ -228,29 +249,6 @@ namespace Modelee.Builders
                 .Where(t => t.IsGenericType
                     && t.GetGenericTypeDefinition() == typeof(IEnumerable<>))
                 .Select(t => t.GetGenericArguments()[0]);
-        }
-
-        private static bool ValidateAndDeserialize(JToken jToken, Type type, out object result)
-        {
-            result = null;
-            var missedProps = 0;
-            var deserialized = JsonConvert.DeserializeObject(jToken.ToString(), type, new JsonSerializerSettings
-            {
-                MissingMemberHandling = MissingMemberHandling.Error,
-                Error = (s, e) =>
-                {
-                    missedProps++;
-                    e.ErrorContext.Handled = true;
-                }
-            });
-
-            if (missedProps >= type.GetProperties().Where(x => x.CanWrite).Count())
-            {
-                return false;
-            }
-
-            result = deserialized;
-            return true;
         }
     }
 }

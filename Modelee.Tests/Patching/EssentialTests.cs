@@ -30,10 +30,10 @@ namespace Modelee.Tests.Patching
         public void PassKeyTest()
         {
             var requestWithKey = GetPatchRequestWithFields("Id", "Name");
-            Assert.IsFalse(requestWithKey.IsNew);
+            Assert.IsFalse(requestWithKey.HasKey);
 
             var requestWithoutKey = GetPatchRequestWithFields("Name");
-            Assert.IsTrue(requestWithoutKey.IsNew);
+            Assert.IsTrue(requestWithoutKey.HasKey);
         }
 
         public void PassRequiredTest()
