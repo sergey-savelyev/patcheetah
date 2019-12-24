@@ -3,7 +3,7 @@
 namespace Modelee.Attributes
 {
     [AttributeUsage(AttributeTargets.Property)]
-    public class NotIncludedInViewModelAttribute : Attribute
+    public class NotIncludedInViewModelAttribute : IgnoreOnPatchingAttribute
     {
     }
 }

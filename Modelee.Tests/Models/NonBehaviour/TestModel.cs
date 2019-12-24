@@ -2,7 +2,7 @@
 
 namespace Modelee.Tests.Models.NonBehaviour
 {
-    public class TestModel
+    public class TestModel : ITestModel<ExtraInfo, InnerExtraInfo>
     {
         public string Id { get; set; }
 

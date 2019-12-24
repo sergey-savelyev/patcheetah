@@ -1,12 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq.Expressions;
+using System.Linq;
 using Modelee.Collections;
 
 namespace Modelee.Configuration
 {
-    public class EntityConfig // <TEntity> : IEntityConfig
+    public class EntityConfig
     {
+        private bool _simplePatchingComputed;
+        private bool _simplePatchingUsed;
+
         internal CaseSensitiveList IgnoredProperties { get; private set; }
         internal CaseSensitiveList RequiredProperties { get; private set; }
         internal CaseSensitiveList NotIncludedProperies { get; private set; }
@@ -15,15 +18,33 @@ namespace Modelee.Configuration
         internal IDictionary<string, Action<PropertyChangedEventArgs>> BeforePatchCallbacks { get; private set; }
         internal IDictionary<string, Action<PropertyChangedEventArgs>> AfterPatchCallbacks { get; private set; }
 
-        public string KeyPropertyName { get; internal set; }
+        public string KeyPropertyName { get; private set; }
 
-        public string EntityTypeName { get; internal set; }
+        public bool StrictKeyUsed { get; private set; }
 
         public bool CaseSensitive { get; private set; }
 
-        internal EntityConfig(bool caseSensitive)
+        public string EntityTypeName { get; }
+
+        public bool SimplePatchingUsed
+        {
+            get
+            {
+                if (!_simplePatchingComputed)
+                {
+                    _simplePatchingUsed = ComputeSimplePatching();
+                    _simplePatchingComputed = true;
+                }
+
+                return _simplePatchingUsed;
+            }
+        }
+            
+
+        internal EntityConfig(bool caseSensitive, Type entityType)
         {
             CaseSensitive = caseSensitive;
+            EntityTypeName = entityType.Name;
             var stringComparer = caseSensitive ? StringComparer.Ordinal : StringComparer.OrdinalIgnoreCase;
 
             IgnoredProperties = new CaseSensitiveList(caseSensitive);
@@ -37,12 +58,12 @@ namespace Modelee.Configuration
 
         internal void IgnoreOnPatching(string propertyName)
         {
-            IgnoredProperties.AddIfNotExist(propertyName);
+            IgnoredProperties.AddIfNotExist(GetPropertyAlias(propertyName));
         }
 
         internal void Required(string propertyName)
         {
-            RequiredProperties.AddIfNotExist(propertyName);
+            RequiredProperties.AddIfNotExist(GetPropertyAlias(propertyName));
         }
 
         internal void NotIncludedInViewModel(string propertyName)
@@ -83,7 +104,7 @@ namespace Modelee.Configuration
 
         internal void UseModeleeConfig(string propertyName)
         {
-            UseModeleeConfigProperties.AddIfNotExist(propertyName);
+            UseModeleeConfigProperties.AddIfNotExist(GetPropertyAlias(propertyName));
         }
 
         internal void SetCaseSensitive(bool caseSensitive)
@@ -114,6 +135,35 @@ namespace Modelee.Configuration
             AfterPatchCallbacks = new Dictionary<string, Action<PropertyChangedEventArgs>>(afterPatchCallbacks, stringComparer);
 
             CaseSensitive = caseSensitive;
+        }
+
+        internal void SetKeyProperty(string propertyName, bool strict)
+        {
+            StrictKeyUsed = strict;
+            KeyPropertyName = GetPropertyAlias(propertyName);
+        }
+
+        private string GetPropertyAlias(string propertyName)
+        {
+            var alias = propertyName;
+
+            if (ViewModelAliasProperties.ContainsKey(propertyName))
+            {
+                alias = ViewModelAliasProperties[propertyName];
+            }
+
+            return alias;
+        }
+
+        private bool ComputeSimplePatching()
+        {
+            return !IgnoredProperties.Any() &&
+                !RequiredProperties.Any() &&
+                !NotIncludedProperies.Any() &&
+                !UseModeleeConfigProperties.Any() &&
+                !ViewModelAliasProperties.Any() &&
+                !BeforePatchCallbacks.Any() &&
+                !AfterPatchCallbacks.Any();
         }
     }
 }

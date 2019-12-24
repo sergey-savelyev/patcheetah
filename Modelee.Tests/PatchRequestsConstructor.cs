@@ -1,14 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using Modelee.Tests.Models.NonBehaviour;
 using Newtonsoft.Json.Linq;
 
 namespace Modelee.Tests
 {
-    public class PatchRequestsGenerator
+    public class PatchRequestsConstructor
     {
-        private static readonly string _originalJSON;
         private static readonly JToken _originalJToken;
 
         public static string GeneratedId { get; }
@@ -16,7 +13,7 @@ namespace Modelee.Tests
         public static PatchObject<TestModel> OriginalModel
             => _originalJToken.ToObject<PatchObject<TestModel>>();
 
-        static PatchRequestsGenerator()
+        static PatchRequestsConstructor()
         {
             GeneratedId = Guid.NewGuid().ToString();
 
@@ -32,8 +29,6 @@ namespace Modelee.Tests
                 { "IntegerArray", JToken.FromObject(new int[] { 1, 2, 3, 4, 5, 6 }) },
                 { "OnlyModelString", "Random only model string" }
             };
-
-            _originalJSON = _originalJToken.ToString();
         }
 
         public static JArray GetExtraInfos(int count, string description)
@@ -53,6 +48,7 @@ namespace Modelee.Tests
         {
             var result = new JObject
             {
+                { "Id", Guid.NewGuid().ToString() },
                 { "Description", description ?? "Random extra info description" },
                 { "InnerExtraInfo", GetInnerExtraInfo(innerCounter ?? 1) }
             };
@@ -71,8 +67,7 @@ namespace Modelee.Tests
             return result;
         }
 
-        public static PatchObject<TModel> GetRequestWithFields<TModel>(params string[] keys)
-            where TModel : class, new()
+        public static JToken GetRequestWithFields(params string[] keys)
         {
             var result = new JObject();
 
@@ -92,14 +87,8 @@ namespace Modelee.Tests
 
                 result.Add(key, value);
             }
-            try
-            {
-                return result.ToObject<PatchObject<TModel>>();
-            }
-            catch (Exception ex)
-            {
-                return null;
-            }
+
+            return result;
         }
     }
 }

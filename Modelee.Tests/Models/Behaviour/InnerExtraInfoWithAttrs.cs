@@ -1,8 +1,8 @@
 ﻿using Modelee.Attributes;
 
-namespace Modelee.Tests.Models.Pack1
+namespace Modelee.Tests.Models.Behaviour
 {
-    public class InnerExtraInfo
+    public class InnerExtraInfoWithAttrs : IInnerExtraInfo
     {
         [RequiredField]
         [ViewModelName("Info")]

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Modelee.Configuration;
 using Modelee.Exceptions;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace Modelee.Builders
@@ -22,16 +23,11 @@ namespace Modelee.Builders
         {
             var config = ConfigurationContainer.Instance.GetConfig(type);
             var properties = type.GetProperties();
-            var missedRequiredProps = config.RequiredProperties.Except(data.Keys);
+            var missedRequiredProps = config.RequiredProperties.Except(data.Keys).ToArray();
 
             if (missedRequiredProps.Any())
             {
                 throw new RequiredPropertiesMissedException(missedRequiredProps);
-            }
-
-            foreach (var ignored in config.IgnoredProperties)
-            {
-                data.Remove(ignored);
             }
 
             var newModelCreated = false;
@@ -40,6 +36,14 @@ namespace Modelee.Builders
             {
                 newModelCreated = true;
                 model = Activator.CreateInstance(type);
+            }
+
+            if (!newModelCreated)
+            {
+                foreach (var ignored in config.IgnoredProperties)
+                {
+                    data.Remove(ignored);
+                }
             }
 
             foreach (var property in properties)
@@ -54,8 +58,34 @@ namespace Modelee.Builders
                 }
 
                 // pass this and model config to model builder if modelee config enabled
-                var value = data[propertyName];
+                var newValue = data[propertyName];
+
+                if (config.SimplePatchingUsed)
+                {
+                    property.SetValue(model, newValue.ToObject(property.PropertyType));
+
+                    continue;
+                }
+
                 var oldValue = property.GetValue(model);
+
+                if (config.KeyPropertyName == propertyName)
+                {
+                    if (!(typeof(IComparable).IsAssignableFrom(property.PropertyType)))
+                    {
+                        throw new InvalidKeyException(property.PropertyType);
+                    }
+
+                    if (!newModelCreated)
+                    {
+                        var valueOfIncomingKey = newValue.ToObject(property.PropertyType);
+
+                        if (config.StrictKeyUsed && (oldValue as IComparable).CompareTo(valueOfIncomingKey) != 0)
+                        {
+                            throw new KeyConcurrenceException(valueOfIncomingKey);
+                        }
+                    }
+                }
 
                 if (!newModelCreated && config.BeforePatchCallbacks.ContainsKey(property.Name))
                 {
@@ -63,13 +93,13 @@ namespace Modelee.Builders
                     {
                         Entity = model,
                         SourceValue = oldValue,
-                        TargetValue = value
+                        TargetValue = newValue
                     });
                 }
 
                 // This is the most complicated part for understanding
                 // Mechanic written below uses modelee configs for recursive patching 
-                if (config.UseModeleeConfigProperties.Contains(property.Name))
+                if (config.UseModeleeConfigProperties.Contains(propertyName))
                 {
                     // At first we should remember original property value
                     var currentValue = property.GetValue(model);
@@ -82,12 +112,24 @@ namespace Modelee.Builders
                         var elementType = GetGenericIEnumerables(property.PropertyType).First();
                         var elementTypeConfig = ConfigurationContainer.Instance.GetConfig(elementType);
                         var collectionHasElements = (currentValue as IEnumerable)?.GetEnumerator().MoveNext() ?? false;
+                        (currentValue as IEnumerable)?.GetEnumerator().Reset();
+                        var originNotPatchedElements = new List<object>();
 
                         // If property in patch object is not an array, it means that something went wrong
-                        if (!(value is JArray jArray))
+                        if (!(newValue is JArray jArray))
                         {
                             throw new ArgumentException("The argument is not valid. Array expected.", propertyName);
                         }
+
+                        var keys = jArray
+                            .Select(x => x is JObject jObj ?
+                                (jObj.ContainsKey(elementTypeConfig.KeyPropertyName) ?
+                                    jObj[elementTypeConfig.KeyPropertyName] :
+                                    null) :
+                                null)
+                            .Where(x => x != null)
+                            .Select(x => x.ToObject<object>())
+                            .ToList();
 
                         // Let's iterate all the elements in patch object
                         var arrayElements = jArray.Select(element =>
@@ -110,11 +152,12 @@ namespace Modelee.Builders
                                     // And origin object collection has elements
                                     if (collectionHasElements)
                                     {
+                                        var enumerator = (currentValue as IEnumerable).GetEnumerator();
                                         // Iterating by them
-                                        while ((currentValue as IEnumerable).GetEnumerator().MoveNext())
+                                        while (enumerator.MoveNext())
                                         {
                                             // Get current value of origin element and its key property
-                                            var elemVal = (currentValue as IEnumerable).GetEnumerator().Current;
+                                            var elemVal = enumerator.Current;
                                             var elemKeyProp = elemVal.GetType().GetProperty(elementTypeConfig.KeyPropertyName);
 
                                             // Checking that key property implements IComparable
@@ -122,10 +165,18 @@ namespace Modelee.Builders
                                             {
                                                 var comparableKeyVal = elemKeyProp.GetValue(elemVal) as IComparable;
 
-                                                // If key prop values are equals
-                                                if (comparableKeyVal.CompareTo(jObject[elementTypeConfig.KeyPropertyName].ToObject(elemKeyProp.PropertyType)) == 0)
+                                                // If key prop values are not equals
+                                                if (comparableKeyVal == null || comparableKeyVal.CompareTo(jObject[elementTypeConfig.KeyPropertyName].ToObject(elemKeyProp.PropertyType)) != 0)
                                                 {
-                                                    // Assign current origin array element to stub object
+                                                    if (!originNotPatchedElements.Any(x => Object.ReferenceEquals(x, elemVal)) && !keys.Any(x => comparableKeyVal?.CompareTo(x) == 0))
+                                                    {
+                                                        // Add origin collection value to list for non-patching
+                                                        originNotPatchedElements.Add(elemVal);
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    // Else assign current origin array element to stub object
                                                     elementOriginValue = elemVal;
                                                 }
                                             }
@@ -138,17 +189,23 @@ namespace Modelee.Builders
                             }
 
                             return element.ToObject(elementType);
-                        });
+                        }).ToList();
 
-                        property.SetValue(model, arrayElements);
+                        arrayElements.AddRange(originNotPatchedElements);
+
+                        var listInstance = Activator.CreateInstance(property.PropertyType);
+                        var listVal = (IList)listInstance;
+                        arrayElements.ForEach(x => listVal.Add(x));
+
+                        property.SetValue(model, listVal);
 
                         continue;
                     }
 
-                    value = JToken.FromObject(ModelBuilder.Build(value.ToObject<Dictionary<string, JToken>>(), property.PropertyType, currentValue));
+                    newValue = JToken.FromObject(ModelBuilder.Build(newValue.ToObject<Dictionary<string, JToken>>(), property.PropertyType, currentValue));
                 }
 
-                property.SetValue(model, value.ToObject(property.PropertyType));
+                property.SetValue(model, newValue.ToObject(property.PropertyType));
 
                 if (!newModelCreated && config.AfterPatchCallbacks.ContainsKey(property.Name))
                 {
@@ -156,7 +213,7 @@ namespace Modelee.Builders
                     {
                         Entity = model,
                         SourceValue = oldValue,
-                        TargetValue = value
+                        TargetValue = newValue
                     });
                 }
             }
@@ -171,6 +228,29 @@ namespace Modelee.Builders
                 .Where(t => t.IsGenericType
                     && t.GetGenericTypeDefinition() == typeof(IEnumerable<>))
                 .Select(t => t.GetGenericArguments()[0]);
+        }
+
+        private static bool ValidateAndDeserialize(JToken jToken, Type type, out object result)
+        {
+            result = null;
+            var missedProps = 0;
+            var deserialized = JsonConvert.DeserializeObject(jToken.ToString(), type, new JsonSerializerSettings
+            {
+                MissingMemberHandling = MissingMemberHandling.Error,
+                Error = (s, e) =>
+                {
+                    missedProps++;
+                    e.ErrorContext.Handled = true;
+                }
+            });
+
+            if (missedProps >= type.GetProperties().Where(x => x.CanWrite).Count())
+            {
+                return false;
+            }
+
+            result = deserialized;
+            return true;
         }
     }
 }

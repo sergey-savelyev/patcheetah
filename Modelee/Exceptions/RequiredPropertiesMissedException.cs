@@ -5,12 +5,20 @@ namespace Modelee.Exceptions
 {
     public class RequiredPropertiesMissedException : Exception
     {
-        public IEnumerable<string> Properties { get; }
+        public ICollection<string> Properties { get; }
 
-        public RequiredPropertiesMissedException(IEnumerable<string> properties)
+        public RequiredPropertiesMissedException(ICollection<string> properties)
             : base ("Required properties missed")
         {
             Properties = properties;
         }
     }
+
+    //public class RequiredPropertyMissedException : Exception
+    //{
+    //    public RequiredPropertyMissedException(string propertyName)
+    //        : base($"Property {propertyName} is required")
+    //    {
+    //    }
+    //}
 }

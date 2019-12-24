@@ -67,7 +67,7 @@ namespace Modelee.Configuration
 
             if (entityConfig == null)
             {
-                entityConfig = new EntityConfig(caseSensitive);
+                entityConfig = new EntityConfig(caseSensitive, type);
             }
 
             // it has parameter equality comparison inside, so if config was just created, it won't be setted again
@@ -79,43 +79,44 @@ namespace Modelee.Configuration
             foreach (var property in properties)
             {
                 var attributes = property.GetCustomAttributes();
-                var propertyName = property.GetCustomAttribute<ViewModelNameAttribute>()?.Name ?? property.Name;
+                var aliasAttribute = property.GetCustomAttribute<ViewModelNameAttribute>();
+
+                // Alias attribute should be proceeded first! It's important.
+                if (aliasAttribute != null)
+                {
+                    entityConfig.AliasInViewModel(property.Name, aliasAttribute.Name);
+                }
 
                 foreach (var attribute in attributes)
                 {
                     if (attribute is IgnoreOnPatchingAttribute)
                     {
-                        entityConfig.IgnoreOnPatching(propertyName);
+                        entityConfig.IgnoreOnPatching(property.Name);
                     }
 
                     if (attribute is RequiredFieldAttribute)
                     {
-                        entityConfig.Required(propertyName);
+                        entityConfig.Required(property.Name);
                     }
 
                     if (attribute is NotIncludedInViewModelAttribute)
                     {
-                        entityConfig.NotIncludedInViewModel(propertyName);
-                    }
-
-                    if (attribute is ViewModelNameAttribute viewModelNameAttribute)
-                    {
-                        entityConfig.AliasInViewModel(property.Name, viewModelNameAttribute.Name);
+                        entityConfig.NotIncludedInViewModel(property.Name);
                     }
 
                     if (attribute is UseModeleeAttribute)
                     {
-                        entityConfig.UseModeleeConfig(propertyName);
+                        entityConfig.UseModeleeConfig(property.Name);
                     }
 
-                    if (attribute is KeyPropertyAttribute)
+                    if (attribute is KeyPropertyAttribute keyPropertyAttribute)
                     {
                         if (keyPropertyAttributeFound)
                         {
                             throw new MultipleKeyException();
                         }
 
-                        entityConfig.KeyPropertyName = propertyName;
+                        entityConfig.SetKeyProperty(property.Name, keyPropertyAttribute.Strict);
                         keyPropertyAttributeFound = true;
                     }
                 }

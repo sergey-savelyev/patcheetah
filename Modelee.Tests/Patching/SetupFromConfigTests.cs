@@ -5,7 +5,7 @@ using Modelee.Tests.Models.NonBehaviour;
 
 namespace Modelee.Tests.Patching
 {
-    public class SetupFromConfigTests : EssentialTests<TestModel>
+    public class SetupFromConfigTests : EssentialTests<TestModel, ExtraInfo, InnerExtraInfo>
     {
         protected override void Setup()
         {
@@ -16,12 +16,13 @@ namespace Modelee.Tests.Patching
                 .NotIncludedInViewModel(x => x.OnlyModelString)
                 .UseModeleeConfig(x => x.OnlyModelString)
                 .UseModeleeConfig(x => x.ExtraInfo)
+                .UseModeleeConfig(x => x.ExtraInfoList)
                 .Register(x => x.Id);
 
             ModeleeConfig.CreateFor<ExtraInfo>()
                 .IgnoreOnPatching(x => x.Description)
                 .UseModeleeConfig(x => x.InnerExtraInfo) // create additional test where config for inner info has not been created
-                .Register();
+                .Register(x => x.Id);
 
             ModeleeConfig.CreateFor<InnerExtraInfo>()
                 .Required(x => x.InfoString)
@@ -58,6 +59,18 @@ namespace Modelee.Tests.Patching
         public void RecursiveModeleePatchingTest()
         {
             PassRecursiveModeleePatchingTest();
+        }
+
+        [Test]
+        public void ArrayPatchingTest()
+        {
+            PassArrayPatchingTest();
+        }
+
+        [Test]
+        public void WrongTypeTest()
+        {
+            PassWrongTypeTest();
         }
     }
 }

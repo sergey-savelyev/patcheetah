@@ -6,8 +6,8 @@ namespace Modelee.Configuration
 {
     public class EntityConfigTyped<TEntity> : EntityConfig
     {
-        public EntityConfigTyped(bool caseSensitive)
-            : base(caseSensitive)
+        internal EntityConfigTyped(bool caseSensitive)
+            : base(caseSensitive, typeof(TEntity))
         {
         }
 
@@ -74,14 +74,14 @@ namespace Modelee.Configuration
             ConfigurationContainer.Instance.RegisterConfig<TEntity>(this);
         }
 
-        public void Register<TReturn>(Expression<Func<TEntity, TReturn>> property)
+        public void Register<TReturn>(Expression<Func<TEntity, TReturn>> keyPproperty, bool strict = false)
         {
-            Register(ExtractPropertyName(property));
+            Register(ExtractPropertyName(keyPproperty), strict);
         }
 
-        public void Register(string keyPropertyName)
+        public void Register(string keyPropertyName, bool strict)
         {
-            KeyPropertyName = keyPropertyName;
+            SetKeyProperty(keyPropertyName, strict);
 
             ConfigurationContainer.Instance.RegisterConfig<TEntity>(this);
         }
@@ -90,7 +90,7 @@ namespace Modelee.Configuration
         {
             if (!(property.Body is MemberExpression memberExpression))
             {
-                throw new Exception("Only properties can be patched");
+                throw new ArgumentException("Only properties can be patched", property.Name);
             }
 
             return memberExpression.Member.Name;
