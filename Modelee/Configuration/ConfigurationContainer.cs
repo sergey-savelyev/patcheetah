@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Modelee.Attributes;
+using Modelee.Collections;
 using Modelee.Exceptions;
 
 namespace Modelee.Configuration
@@ -38,10 +39,9 @@ namespace Modelee.Configuration
 
             if (!_configs.ContainsKey(name))
             {
-                var config = ObtainConfigFromType(type);
-                RegisterConfigForType(config, type);
+                RegisterConfigForType(null, type);
 
-                return config;
+                return GetConfig(type);
             }
 
             return _configs[name];
@@ -51,12 +51,13 @@ namespace Modelee.Configuration
         {
             var name = type.Name;
             config = ObtainConfigFromType(type, config);
-            _configs.Add(name, config);
+            ValidateConfig(config);
+            _configs.RewriteIfExist(name, config);
         }
 
         private EntityConfig ObtainConfigFromType(Type type, EntityConfig entityConfig = null)
         {
-            var caseSensitive = false;
+            var caseSensitive = entityConfig?.CaseSensitive ?? false;
             var caseSensitivityAttrs = type.GetCustomAttributes(typeof(CaseSensitivePatchingAttribute), false);
 
             if (caseSensitivityAttrs.Any())
@@ -123,6 +124,35 @@ namespace Modelee.Configuration
             }
 
             return entityConfig;
+        }
+
+        private void ValidateConfig(EntityConfig config)
+        {
+            var configuredProperties = config.ConfiguredProperties;
+            var keyProperties = configuredProperties.Where(x => x.Key);
+
+            if (keyProperties.Count() > 1)
+            {
+                throw new InvalidKeyException("Multiple key is not supported");
+            }
+
+            var keyProperty = keyProperties.FirstOrDefault();
+            var requiredPropertyNames = configuredProperties.Where(x => x.Required).Select(x => x.Name);
+
+            if (keyProperty != null)
+            {
+                if (requiredPropertyNames.Contains(keyProperty.Name))
+                {
+                    throw new InvalidConfigurationException("Key property can't be required", keyProperty.Name);
+                }
+            }
+
+            var requiredAndIgnoredIntersect = requiredPropertyNames.Intersect(configuredProperties.Where(x => x.Ignored).Select(x => x.Name)).Any();
+
+            if (requiredAndIgnoredIntersect)
+            {
+                throw new InvalidConfigurationException("Properties can't be required and ignored at the same time");
+            }
         }
     }
 }

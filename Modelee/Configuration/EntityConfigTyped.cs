@@ -55,7 +55,7 @@ namespace Modelee.Configuration
             Expression<Func<TEntity, TReturn>> property,
             Action<PropertyChangedEventArgs> callback)
         {
-            BeforePatchCallbacks.RewriteIfExist(ExtractPropertyName(property), callback);
+            SetBeforePatchCallback(ExtractPropertyName(property), callback);
 
             return this;
         }
@@ -64,7 +64,7 @@ namespace Modelee.Configuration
             Expression<Func<TEntity, TReturn>> property,
             Action<PropertyChangedEventArgs> callback)
         {
-            AfterPatchCallbacks.RewriteIfExist(ExtractPropertyName(property), callback);
+            SetAfterPatchCallback(ExtractPropertyName(property), callback);
 
             return this;
         }

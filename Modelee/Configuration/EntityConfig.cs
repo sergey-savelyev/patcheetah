@@ -1,110 +1,80 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Modelee.Collections;
 
 namespace Modelee.Configuration
 {
     public class EntityConfig
     {
-        private bool _simplePatchingComputed;
-        private bool _simplePatchingUsed;
+        private string _keyPropertyName = string.Empty;
+        private IDictionary<string, PropertyConfiguration> _configuredProperties;
 
-        internal CaseSensitiveList IgnoredProperties { get; private set; }
-        internal CaseSensitiveList RequiredProperties { get; private set; }
-        internal CaseSensitiveList NotIncludedProperies { get; private set; }
-        internal CaseSensitiveList UseModeleeConfigProperties { get; private set; }
-        internal IDictionary<string, string> ViewModelAliasProperties { get; private set; }
-        internal IDictionary<string, Action<PropertyChangedEventArgs>> BeforePatchCallbacks { get; private set; }
-        internal IDictionary<string, Action<PropertyChangedEventArgs>> AfterPatchCallbacks { get; private set; }
-
-        public string KeyPropertyName { get; private set; }
-
-        public bool StrictKeyUsed { get; private set; }
+        public bool CheckKeyOnPatching { get; private set; }
 
         public bool CaseSensitive { get; private set; }
 
-        public string EntityTypeName { get; }
-
-        public bool SimplePatchingUsed
+        public string KeyPropertyName
         {
             get
             {
-                if (!_simplePatchingComputed)
+                if (_keyPropertyName == string.Empty)
                 {
-                    _simplePatchingUsed = ComputeSimplePatching();
-                    _simplePatchingComputed = true;
+                    _keyPropertyName = ConfiguredProperties.FirstOrDefault(x => x.Key)?.Name;
                 }
 
-                return _simplePatchingUsed;
+                return _keyPropertyName;
             }
         }
-            
 
-        internal EntityConfig(bool caseSensitive, Type entityType)
+        public string EntityTypeName { get; }
+
+        public HashSet<PropertyConfiguration> ConfiguredProperties => _configuredProperties.Select(x => x.Value).ToHashSet();
+
+        public PropertyConfiguration this[string propName]
+        {
+            get
+            {
+                if (!_configuredProperties.ContainsKey(propName))
+                {
+                    return null;
+                }
+
+                return _configuredProperties[propName];
+            }
+        }
+
+        internal EntityConfig(bool caseSensitive, Type type)
         {
             CaseSensitive = caseSensitive;
-            EntityTypeName = entityType.Name;
+            EntityTypeName = type.Name;
             var stringComparer = caseSensitive ? StringComparer.Ordinal : StringComparer.OrdinalIgnoreCase;
 
-            IgnoredProperties = new CaseSensitiveList(caseSensitive);
-            RequiredProperties = new CaseSensitiveList(caseSensitive);
-            NotIncludedProperies = new CaseSensitiveList(caseSensitive);
-            UseModeleeConfigProperties = new CaseSensitiveList(caseSensitive);
-            ViewModelAliasProperties = new Dictionary<string, string>(stringComparer);
-            BeforePatchCallbacks = new Dictionary<string, Action<PropertyChangedEventArgs>>(stringComparer);
-            AfterPatchCallbacks = new Dictionary<string, Action<PropertyChangedEventArgs>>(stringComparer);
+            _configuredProperties = new Dictionary<string, PropertyConfiguration>(stringComparer);
         }
 
         internal void IgnoreOnPatching(string propertyName)
         {
-            IgnoredProperties.AddIfNotExist(GetPropertyAlias(propertyName));
+            GetPropertyConfiguration(propertyName).Ignored = true;
         }
 
         internal void Required(string propertyName)
         {
-            RequiredProperties.AddIfNotExist(GetPropertyAlias(propertyName));
+            GetPropertyConfiguration(propertyName).Required = true;
         }
 
         internal void NotIncludedInViewModel(string propertyName)
         {
-            NotIncludedProperies.AddIfNotExist(propertyName);
+            GetPropertyConfiguration(propertyName).NotIncludedInViewModel = true;
         }
 
         internal void AliasInViewModel(string propertyName, string alias)
         {
-            var prevPropName = propertyName;
-
-            if (ViewModelAliasProperties.ContainsKey(propertyName))
-            {
-                prevPropName = ViewModelAliasProperties[propertyName];
-            }
-
-            var ignored = IgnoredProperties.Remove(prevPropName);
-            var required = RequiredProperties.Remove(prevPropName);
-            var usingModelee = UseModeleeConfigProperties.Remove(prevPropName);
-
-            if (ignored)
-            {
-                IgnoredProperties.Add(alias);
-            }
-
-            if (required)
-            {
-                RequiredProperties.Add(alias);
-            }
-
-            if (usingModelee)
-            {
-                UseModeleeConfigProperties.Add(alias);
-            }
-
-            ViewModelAliasProperties.RewriteIfExist(propertyName, alias);
+            GetPropertyConfiguration(propertyName).ViewModelAlias = alias;
         }
 
         internal void UseModeleeConfig(string propertyName)
         {
-            UseModeleeConfigProperties.AddIfNotExist(GetPropertyAlias(propertyName));
+            GetPropertyConfiguration(propertyName).HasModeleeCongig = true;
         }
 
         internal void SetCaseSensitive(bool caseSensitive)
@@ -114,56 +84,46 @@ namespace Modelee.Configuration
                 return;
             }
 
-            IgnoredProperties.SetCaseSensitivity(caseSensitive);
-            RequiredProperties.SetCaseSensitivity(caseSensitive);
-            NotIncludedProperies.SetCaseSensitivity(caseSensitive);
-            UseModeleeConfigProperties.SetCaseSensitivity(caseSensitive);
-
             var stringComparer = caseSensitive ? StringComparer.Ordinal : StringComparer.OrdinalIgnoreCase;
+            var configuredPropertiesCopy = new KeyValuePair<string, PropertyConfiguration>[_configuredProperties.Count];
 
-            var viewModelAliasProperties = new KeyValuePair<string, string>[ViewModelAliasProperties.Count];
-            var beforePatchCallbacks = new KeyValuePair<string, Action<PropertyChangedEventArgs>>[BeforePatchCallbacks.Count];
-            var afterPatchCallbacks = new KeyValuePair<string, Action<PropertyChangedEventArgs>>[AfterPatchCallbacks.Count];
-
-            ViewModelAliasProperties.CopyTo(viewModelAliasProperties, 0);
-            ViewModelAliasProperties = new Dictionary<string, string>(viewModelAliasProperties, stringComparer);
-
-            BeforePatchCallbacks.CopyTo(beforePatchCallbacks, 0);
-            BeforePatchCallbacks = new Dictionary<string, Action<PropertyChangedEventArgs>>(beforePatchCallbacks, stringComparer);
-
-            AfterPatchCallbacks.CopyTo(afterPatchCallbacks, 0);
-            AfterPatchCallbacks = new Dictionary<string, Action<PropertyChangedEventArgs>>(afterPatchCallbacks, stringComparer);
+            _configuredProperties.CopyTo(configuredPropertiesCopy, 0);
+            _configuredProperties = new Dictionary<string, PropertyConfiguration>(configuredPropertiesCopy, stringComparer);
 
             CaseSensitive = caseSensitive;
         }
 
         internal void SetKeyProperty(string propertyName, bool strict)
         {
-            StrictKeyUsed = strict;
-            KeyPropertyName = GetPropertyAlias(propertyName);
-        }
-
-        private string GetPropertyAlias(string propertyName)
-        {
-            var alias = propertyName;
-
-            if (ViewModelAliasProperties.ContainsKey(propertyName))
+            var prevKey = _configuredProperties.FirstOrDefault(x => x.Value.Key);
+            if (!string.IsNullOrEmpty(prevKey.Key))
             {
-                alias = ViewModelAliasProperties[propertyName];
+                prevKey.Value.Key = false;
             }
 
-            return alias;
+            CheckKeyOnPatching = strict;
+            GetPropertyConfiguration(propertyName).Key = true;
         }
 
-        private bool ComputeSimplePatching()
+        internal void SetBeforePatchCallback(string propertyName, Action<PropertyChangedEventArgs> callback)
         {
-            return !IgnoredProperties.Any() &&
-                !RequiredProperties.Any() &&
-                !NotIncludedProperies.Any() &&
-                !UseModeleeConfigProperties.Any() &&
-                !ViewModelAliasProperties.Any() &&
-                !BeforePatchCallbacks.Any() &&
-                !AfterPatchCallbacks.Any();
+            GetPropertyConfiguration(propertyName).BeforePatchCallback = callback;
+        }
+
+        internal void SetAfterPatchCallback(string propertyName, Action<PropertyChangedEventArgs> callback)
+        {
+            GetPropertyConfiguration(propertyName).AfterPatchCallback = callback;
+        }
+
+        private PropertyConfiguration GetPropertyConfiguration(string propertyName)
+        {
+            if (!_configuredProperties.ContainsKey(propertyName))
+            {
+                var configuration = new PropertyConfiguration(propertyName);
+                _configuredProperties.Add(propertyName, configuration);
+            }
+
+            return _configuredProperties[propertyName];
         }
     }
 }

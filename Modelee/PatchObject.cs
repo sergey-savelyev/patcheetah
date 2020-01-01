@@ -40,7 +40,7 @@ namespace Modelee
         public PatchObject()
         {
             _entityConfig = ConfigurationContainer.Instance.GetConfig<TEntity>();
-            _patchProperties = new Dictionary<string, JToken>(_entityConfig.CaseSensitive ?
+            _patchProperties = new Dictionary<string, JToken>(_entityConfig?.CaseSensitive ?? false ?
                 StringComparer.Ordinal :
                 StringComparer.OrdinalIgnoreCase);
 
@@ -49,12 +49,12 @@ namespace Modelee
 
         public void Patch(ref TEntity entity)
         {
-            entity = _builder.PatchModel(entity);
+            entity = _builder.BuildModel(entity);
         }
 
         public TEntity Patch(TEntity entity)
         {
-            return _builder.PatchModel(entity);
+            return _builder.BuildModel(entity);
         }
 
         public TEntity CreateEntity()

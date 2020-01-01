@@ -51,5 +51,17 @@ namespace Modelee.Tests.Patching
         {
             PassWrongTypeTest();
         }
+
+        [Test]
+        public void NullPatchingTest()
+        {
+            PassNullPatchingTest();
+        }
+
+        [Test]
+        public void CaseSensitivityTest()
+        {
+            PassCaseSensitiveTest(true);
+        }
     }
 }

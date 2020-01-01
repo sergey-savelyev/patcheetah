@@ -170,6 +170,91 @@ namespace Modelee.Tests.Patching
             });
         }
 
+        public void PassNullPatchingTest()
+        {
+            // property with modelee config
+            var request = GetPatchRequestWithFields("Name");
+            request.Add("AdditionalInfo", null);
+            var model = new TTestModel
+            {
+                Description = "Test",
+                ExtraInfo = new TExtraInfo
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    Description = "Test",
+                    InnerExtraInfo = null
+                },
+                ExtraInfoList = new List<TExtraInfo>
+                {
+                    new TExtraInfo
+                    {
+                        Id = Guid.NewGuid().ToString(),
+                        Description = "Test",
+                        InnerExtraInfo = null
+                    }
+                },
+                ExtraInfoArray = new TExtraInfo[]
+                {
+                    new TExtraInfo
+                    {
+                        Id = Guid.NewGuid().ToString(),
+                        Description = "Test",
+                        InnerExtraInfo = null
+                    }
+                }
+            };
+
+            model = request.Patch(model);
+
+            Assert.AreEqual(null, model.ExtraInfo);
+
+            // property with no modelee config
+            request = GetPatchRequestWithFields("Name");
+            request.Add("Description", null);
+            model = request.Patch(model);
+
+            Assert.AreEqual(null, model.Description);
+
+            // array with modelee config
+            request = GetPatchRequestWithFields("Name");
+            request.Add("ExtraInfoList", null);
+            model = request.Patch(model);
+
+            Assert.AreEqual(null, model.ExtraInfoList);
+
+            // array with no modelee config
+            request = GetPatchRequestWithFields("Name");
+            request.Add("ExtraInfoArray", null);
+            model = request.Patch(model);
+
+            Assert.AreEqual(null, model.ExtraInfoArray);
+        }
+
+        public void PassCaseSensitiveTest(bool sensitive)
+        {
+            var request = GetPatchRequestWithFields("Name", "Description");
+            var descriptionValue = request["Description"].ToString();
+            request.Remove("Description", out _);
+            request.Add("description", descriptionValue);
+
+            var modelDescription = "RandomDescription";
+            var model = new TTestModel
+            {
+                Description = modelDescription
+            };
+
+            model = request.Patch(model);
+
+            if (sensitive)
+            {
+                Assert.AreNotEqual(descriptionValue, model.Description);
+
+                return;
+            }
+
+            Assert.AreEqual(descriptionValue, model.Description);
+        }
+
         protected PatchObject<TTestModel> GetPatchRequestWithFields(params string[] fieldNames)
         {
             return PatchRequestsConstructor.GetRequestWithFields(fieldNames).ToObject<PatchObject<TTestModel>>();

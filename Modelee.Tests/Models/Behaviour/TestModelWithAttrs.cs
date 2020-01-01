@@ -3,6 +3,7 @@ using Modelee.Attributes;
 
 namespace Modelee.Tests.Models.Behaviour
 {
+    [CaseSensitivePatching]
     public class TestModelWithAttrs : ITestModel<ExtraInfoWithAttrs, InnerExtraInfoWithAttrs>
     {
         // Key field
