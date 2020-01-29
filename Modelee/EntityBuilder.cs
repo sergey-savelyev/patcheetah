@@ -152,8 +152,14 @@ namespace Modelee
 
             if (newValue == null)
             {
-                var defaultValue = Activator.CreateInstance(property.PropertyType);
-                property.SetValue(entityToPatch, defaultValue);
+                object nullValue = null;
+
+                if (property.PropertyType.IsValueType && Nullable.GetUnderlyingType(property.PropertyType) == null)
+                {
+                    nullValue = Activator.CreateInstance(property.PropertyType);
+                }
+
+                property.SetValue(entityToPatch, nullValue);
 
                 return;
             }
