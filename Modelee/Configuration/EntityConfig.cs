@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Modelee.Mapping;
 
 namespace Modelee.Configuration
 {
@@ -52,29 +54,29 @@ namespace Modelee.Configuration
             _configuredProperties = new Dictionary<string, PropertyConfiguration>(stringComparer);
         }
 
-        internal void IgnoreOnPatching(string propertyName)
+        internal void SetPropertyMapping(string propertyName, MappingHandler handler)
+        {
+            GetPropertyConfiguration(propertyName).MappingHandler = handler;
+        }
+
+        internal void SetPropertyIgnored(string propertyName)
         {
             GetPropertyConfiguration(propertyName).Ignored = true;
         }
 
-        internal void Required(string propertyName)
+        internal void SetPropertyRequired(string propertyName)
         {
             GetPropertyConfiguration(propertyName).Required = true;
         }
 
-        internal void NotIncludedInViewModel(string propertyName)
+        internal void SetPropertyAlias(string propertyName, string alias)
         {
-            GetPropertyConfiguration(propertyName).NotIncludedInViewModel = true;
+            GetPropertyConfiguration(propertyName).Alias = alias;
         }
 
-        internal void AliasInViewModel(string propertyName, string alias)
+        internal void SetPropertyUsedInternalConfig(string propertyName)
         {
-            GetPropertyConfiguration(propertyName).ViewModelAlias = alias;
-        }
-
-        internal void UseModeleeConfig(string propertyName)
-        {
-            GetPropertyConfiguration(propertyName).HasModeleeCongig = true;
+            GetPropertyConfiguration(propertyName).HasInternalConfig = true;
         }
 
         internal void SetCaseSensitive(bool caseSensitive)
@@ -105,12 +107,12 @@ namespace Modelee.Configuration
             GetPropertyConfiguration(propertyName).Key = true;
         }
 
-        internal void SetBeforePatchCallback(string propertyName, Action<PropertyChangedEventArgs> callback)
+        internal void SetPropertyBeforePatchCallback(string propertyName, Action<PropertyChangedEventArgs> callback)
         {
             GetPropertyConfiguration(propertyName).BeforePatchCallback = callback;
         }
 
-        internal void SetAfterPatchCallback(string propertyName, Action<PropertyChangedEventArgs> callback)
+        internal void SetPropertyAfterPatchCallback(string propertyName, Action<PropertyChangedEventArgs> callback)
         {
             GetPropertyConfiguration(propertyName).AfterPatchCallback = callback;
         }
@@ -124,6 +126,11 @@ namespace Modelee.Configuration
             }
 
             return _configuredProperties[propertyName];
+        }
+
+        public IEnumerator<PropertyConfiguration> GetEnumerator()
+        {
+            return _configuredProperties.Select(x => x.Value).GetEnumerator();
         }
     }
 }

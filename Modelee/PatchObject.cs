@@ -2,9 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using Modelee.Builders;
 using Modelee.Configuration;
-using Modelee.Exceptions;
 using Newtonsoft.Json.Linq;
 
 namespace Modelee
@@ -14,20 +12,11 @@ namespace Modelee
     {
         private readonly Dictionary<string, JToken> _patchProperties;
         private readonly EntityConfig _entityConfig;
-        private readonly ModelBuilder<TEntity> _builder;
+        private readonly EntityBuilder<TEntity> _builder;
 
-        public bool HasKey
-        {
-            get
-            {
-                if (string.IsNullOrEmpty(_entityConfig.KeyPropertyName))
-                {
-                    return true;
-                }
-
-                return !_patchProperties.ContainsKey(_entityConfig.KeyPropertyName);
-            }
-        }
+        public bool HasKey => string.IsNullOrEmpty(_entityConfig.KeyPropertyName) ?
+            true :
+            !_patchProperties.ContainsKey(_entityConfig.KeyPropertyName);
 
         public JToken Key => HasKey ? null : _patchProperties[_entityConfig.KeyPropertyName];
 
@@ -44,22 +33,17 @@ namespace Modelee
                 StringComparer.Ordinal :
                 StringComparer.OrdinalIgnoreCase);
 
-            _builder = new ModelBuilder<TEntity>(_patchProperties, _entityConfig);
+            _builder = new EntityBuilder<TEntity>(_patchProperties, _entityConfig);
         }
 
-        public void Patch(ref TEntity entity)
+        public void Patch(TEntity entity)
         {
-            entity = _builder.BuildModel(entity);
-        }
-
-        public TEntity Patch(TEntity entity)
-        {
-            return _builder.BuildModel(entity);
+            _builder.PatchEntity(entity);
         }
 
         public TEntity CreateEntity()
         {
-            return _builder.BuildModel();
+            return _builder.BuildEntity();
         }
 
         public IEnumerator<KeyValuePair<string, JToken>> GetEnumerator()

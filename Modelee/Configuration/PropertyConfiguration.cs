@@ -1,4 +1,5 @@
 ﻿using System;
+using Modelee.Mapping;
 
 namespace Modelee.Configuration
 {
@@ -8,17 +9,17 @@ namespace Modelee.Configuration
 
         public bool Key { get; set; }
 
-        public string Name => ViewModelAlias ?? _name;
+        public string Name => Alias ?? _name;
 
         public bool Required { get; set; }
 
         public bool Ignored { get; set; }
 
-        public bool NotIncludedInViewModel { get; set; }
+        public bool HasInternalConfig { get; set; }
 
-        public bool HasModeleeCongig { get; set; }
+        public string Alias { get; set; }
 
-        public string ViewModelAlias { get; set; }
+        public MappingHandler MappingHandler { get; set; }
 
         public Action<PropertyChangedEventArgs> BeforePatchCallback { get; set; }
 

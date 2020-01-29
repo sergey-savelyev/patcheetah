@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Modelee.Attributes;
-using Modelee.Collections;
 using Modelee.Exceptions;
+using Newtonsoft.Json;
 
 namespace Modelee.Configuration
 {
@@ -12,7 +12,7 @@ namespace Modelee.Configuration
     {
         private static ConfigurationContainer _container;
 
-        internal static ConfigurationContainer Instance => _container ?? (_container = new ConfigurationContainer());
+        public static ConfigurationContainer Instance => _container ?? (_container = new ConfigurationContainer());
 
         private IDictionary<string, EntityConfig> _configs;
 
@@ -21,19 +21,19 @@ namespace Modelee.Configuration
             _configs = new Dictionary<string, EntityConfig>();
         }
 
-        internal void RegisterConfig<TEntity>(EntityConfig config)
+        public void RegisterConfig<TEntity>(EntityConfig config)
         {
             this.RegisterConfigForType(config, typeof(TEntity));
         }
 
-        internal EntityConfig GetConfig<TEntity>()
+        public EntityConfig GetConfig<TEntity>()
         {
             var type = typeof(TEntity);
 
             return GetConfig(type);
         }
 
-        internal EntityConfig GetConfig(Type type)
+        public EntityConfig GetConfig(Type type)
         {
             var name = type.Name;
 
@@ -80,37 +80,33 @@ namespace Modelee.Configuration
             foreach (var property in properties)
             {
                 var attributes = property.GetCustomAttributes();
-                var aliasAttribute = property.GetCustomAttribute<ViewModelNameAttribute>();
+                var jsonPropertyAttribute = property.GetCustomAttribute<JsonPropertyAttribute>();
 
-                // Alias attribute should be proceeded first! It's important.
-                if (aliasAttribute != null)
+                // Alias or jsonProp attribute should be proceeded first! It's important.
+
+                if (jsonPropertyAttribute != null)
                 {
-                    entityConfig.AliasInViewModel(property.Name, aliasAttribute.Name);
+                    entityConfig.SetPropertyAlias(property.Name, jsonPropertyAttribute.PropertyName);
                 }
 
                 foreach (var attribute in attributes)
                 {
-                    if (attribute is IgnoreOnPatchingAttribute)
+                    if (attribute is IgnoreOnPatchingAttribute || attribute is JsonIgnoreAttribute)
                     {
-                        entityConfig.IgnoreOnPatching(property.Name);
+                        entityConfig.SetPropertyIgnored(property.Name);
                     }
 
-                    if (attribute is RequiredFieldAttribute)
+                    if (attribute is RequiredOnPatchingAttribute)
                     {
-                        entityConfig.Required(property.Name);
+                        entityConfig.SetPropertyRequired(property.Name);
                     }
 
-                    if (attribute is NotIncludedInViewModelAttribute)
+                    if (attribute is ConfiguredPatchingAttribute)
                     {
-                        entityConfig.NotIncludedInViewModel(property.Name);
+                        entityConfig.SetPropertyUsedInternalConfig(property.Name);
                     }
 
-                    if (attribute is UseModeleeAttribute)
-                    {
-                        entityConfig.UseModeleeConfig(property.Name);
-                    }
-
-                    if (attribute is KeyPropertyAttribute keyPropertyAttribute)
+                    if (attribute is PatchingKeyAttribute keyPropertyAttribute)
                     {
                         if (keyPropertyAttributeFound)
                         {

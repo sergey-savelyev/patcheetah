@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Linq.Expressions;
-using Modelee.Collections;
+using Modelee.Mapping;
 
 namespace Modelee.Configuration
 {
@@ -11,10 +11,20 @@ namespace Modelee.Configuration
         {
         }
 
+        public EntityConfigTyped<TEntity> UseMapping<TReturn>(Expression<Func<TEntity, TReturn>> property, Func<TReturn, MappingResultTyped<TReturn>> mappingHandler)
+        {
+            var handler = new MappingHandler(obj => mappingHandler((TReturn)obj));
+            var propName = ExtractPropertyName(property);
+
+            SetPropertyMapping(propName, handler);
+
+            return this;
+        }
+
         public EntityConfigTyped<TEntity> IgnoreOnPatching<TReturn>(Expression<Func<TEntity, TReturn>> property)
         {
             var propName = ExtractPropertyName(property);
-            IgnoreOnPatching(propName);
+            SetPropertyIgnored(propName);
 
             return this;
         }
@@ -22,23 +32,7 @@ namespace Modelee.Configuration
         public EntityConfigTyped<TEntity> Required<TReturn>(Expression<Func<TEntity, TReturn>> property)
         {
             var propName = ExtractPropertyName(property);
-            Required(propName);
-
-            return this;
-        }
-
-        public EntityConfigTyped<TEntity> NotIncludedInViewModel<TReturn>(Expression<Func<TEntity, TReturn>> property)
-        {
-            var propName = ExtractPropertyName(property);
-            NotIncludedInViewModel(propName);
-
-            return this;
-        }
-
-        public EntityConfigTyped<TEntity> AliasInViewModel<TReturn>(Expression<Func<TEntity, TReturn>> property, string alias)
-        {
-            var propName = ExtractPropertyName(property);
-            AliasInViewModel(propName, alias);
+            SetPropertyRequired(propName);
 
             return this;
         }
@@ -46,7 +40,7 @@ namespace Modelee.Configuration
         public EntityConfigTyped<TEntity> UseModeleeConfig<TReturn>(Expression<Func<TEntity, TReturn>> property)
         {
             var propName = ExtractPropertyName(property);
-            UseModeleeConfig(propName);
+            SetPropertyUsedInternalConfig(propName);
 
             return this;
         }
@@ -55,7 +49,7 @@ namespace Modelee.Configuration
             Expression<Func<TEntity, TReturn>> property,
             Action<PropertyChangedEventArgs> callback)
         {
-            SetBeforePatchCallback(ExtractPropertyName(property), callback);
+            SetPropertyBeforePatchCallback(ExtractPropertyName(property), callback);
 
             return this;
         }
@@ -64,7 +58,7 @@ namespace Modelee.Configuration
             Expression<Func<TEntity, TReturn>> property,
             Action<PropertyChangedEventArgs> callback)
         {
-            SetAfterPatchCallback(ExtractPropertyName(property), callback);
+            SetPropertyAfterPatchCallback(ExtractPropertyName(property), callback);
 
             return this;
         }

@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 
-namespace Modelee.Collections
+namespace Modelee
 {
-    public static class CollectionExtensions
+    public static class Extensions
     {
         public static void AddIfNotExist<T>(this ICollection<T> list, T element)
             where T : IComparable

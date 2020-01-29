@@ -1,5 +1,6 @@
 ﻿using System;
-using Modelee.Tests.Models.NonBehaviour;
+using Modelee.Tests.Models;
+using Modelee.Tests.Models.Standard;
 using Newtonsoft.Json.Linq;
 
 namespace Modelee.Tests
@@ -10,8 +11,8 @@ namespace Modelee.Tests
 
         public static string GeneratedId { get; }
 
-        public static PatchObject<TestModel> OriginalModel
-            => _originalJToken.ToObject<PatchObject<TestModel>>();
+        public static PatchObject<User> OriginalModel
+            => _originalJToken.ToObject<PatchObject<User>>();
 
         static PatchRequestsConstructor()
         {
@@ -20,51 +21,76 @@ namespace Modelee.Tests
             _originalJToken = new JObject
             {
                 { "Id", GeneratedId },
-                { "Name", "Random name" },
-                { "Description", "Random description" },
-                { "Counter", 1 },
-                { "AdditionalInfo", GetExtraInfo() },
-                { "ExtraInfoArray", GetExtraInfos(3, "Random extra info array description") },
-                { "ExtraInfoList", GetExtraInfos(3, "Random extra info list description") },
-                { "IntegerArray", JToken.FromObject(new int[] { 1, 2, 3, 4, 5, 6 }) },
-                { "OnlyModelString", "Random only model string" }
+                { "Username", "Patcherman" },
+                { "NickName", "Patcherman" },
+                { "LastSeenFrom", "Nokia 3310" },
+                { "Personal", GetPersonalInfo("Sergey", "Savelyev", new DateTime(1994, 4, 19)) },
+                { "AccessRights", JToken.FromObject(new string[] { "FullAccess" }) },
+                { "Contacts", GetContacts(3, "ContactValue") },
+                { "ArchivedContacts", GetContacts(3, "ArchivedContactValue") },
+                { "Role", UserRole.Admin.ToString() },
             };
         }
 
-        public static JArray GetExtraInfos(int count, string description)
+        public static JObject GetPersonalInfo(string firstName, string lastName, DateTime birthday)
+        {
+            var result = new JObject
+            {
+                { "Gender", GetRandomEnumValue<Gender>() },
+                { "FirstName", firstName },
+                { "LastName", lastName },
+                { "Birthday", birthday },
+                { "Address", GetUserAddress(0) }
+            };
+
+            return result;
+        }
+
+        public static JArray GetContacts(int count, string valuePattern)
         {
             var array = new JArray();
 
-            for (var i = 0; i < count; i++)
+            for (var i = 1; i <= count; i++)
             {
-                var item = GetExtraInfo($"{description} {i + 1}", i + 1);
+                var item = GetContact(i, valuePattern);
                 array.Add(item);
             }
 
             return array;
         }
 
-        public static JObject GetExtraInfo(string description = null, int? innerCounter = null)
+        public static JObject GetContact(int counter, string valuePattern)
         {
             var result = new JObject
             {
                 { "Id", Guid.NewGuid().ToString() },
-                { "Description", description ?? "Random extra info description" },
-                { "InnerExtraInfo", GetInnerExtraInfo(innerCounter ?? 1) }
+                { "Type", GetRandomEnumValue<ContactType>() },
+                { "Value", $"{valuePattern}_{counter}" },
+                { "Address", GetUserAddress(counter) }
             };
 
             return result;
         }
 
-        public static JObject GetInnerExtraInfo(int counter, string infoString = null)
+        public static JObject GetUserAddress(int counter)
         {
+            var zipcode = new Random().Next(0, 999999);
             var result = new JObject
             {
-                { "InfoCounter", counter },
-                { "Info", infoString ?? $"Random inner info string {counter}" }
+                { "Address", $"Country {counter}, City {counter}, Street {counter}, House {counter}" },
+                { "Zip", zipcode }
             };
 
             return result;
+        }
+
+        public static string GetRandomEnumValue<TEnum>() where TEnum : Enum
+        {
+            var values = Enum.GetValues(typeof(TEnum));
+            var randomizer = new Random();
+            var randomValue = (TEnum)values.GetValue(randomizer.Next(values.Length));
+
+            return randomValue.ToString();
         }
 
         public static JToken GetRequestWithFields(params string[] keys)

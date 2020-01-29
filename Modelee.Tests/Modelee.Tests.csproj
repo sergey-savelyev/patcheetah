@@ -16,9 +16,10 @@
     <ProjectReference Include="..\Modelee\Modelee.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Patching\" />
     <Folder Include="Models\" />
-    <Folder Include="Models\Behaviour\" />
-    <Folder Include="Models\NonBehaviour\" />
+    <Folder Include="Models\Common\" />
+    <Folder Include="Models\Standard\" />
+    <Folder Include="Models\WithAttributes\" />
+    <Folder Include="Models\Abstract\" />
   </ItemGroup>
 </Project>
