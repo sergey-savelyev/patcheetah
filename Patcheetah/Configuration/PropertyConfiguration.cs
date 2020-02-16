@@ -1,23 +1,19 @@
 ﻿using System;
+using System.Collections.Generic;
 using Patcheetah.Mapping;
+using Patcheetah.Patching;
 
 namespace Patcheetah.Configuration
 {
     public class PropertyConfiguration
     {
-        private string _name;
-
         public bool Key { get; set; }
 
-        public string Name => Alias ?? _name;
+        public string Name { get; set; }
 
         public bool Required { get; set; }
 
         public bool Ignored { get; set; }
-
-        public bool HasInternalConfig { get; set; }
-
-        public string Alias { get; set; }
 
         public MappingHandler MappingHandler { get; set; }
 
@@ -25,9 +21,11 @@ namespace Patcheetah.Configuration
 
         public Action<PropertyChangedEventArgs> AfterPatchCallback { get; set; }
 
+        public Dictionary<string, object> ExtraSettings { get; set; } = new Dictionary<string, object>();
+
         public PropertyConfiguration(string name)
         {
-            _name = name;
+            Name = name;
         }
     }
 }

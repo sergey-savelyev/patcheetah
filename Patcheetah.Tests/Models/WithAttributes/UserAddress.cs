@@ -6,7 +6,7 @@ namespace Patcheetah.Tests.Models.WithAttributes
 {
     public class UserAddress : IUserAddress
     {
-        [JsonProperty("Address")]
+        [JsonAlias("Address")]
         [RequiredOnPatching]
         public string FullAddress { get; set; }
 

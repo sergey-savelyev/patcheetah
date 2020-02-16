@@ -3,55 +3,51 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Patcheetah.Configuration;
-using Newtonsoft.Json.Linq;
 
-namespace Patcheetah
+namespace Patcheetah.Patching
 {
-    public sealed class PatchObject<TEntity> : IDictionary<string, JToken>
+    public class PatchObject<TEntity> : IDictionary<string, object>
         where TEntity : class, new()
     {
-        private readonly Dictionary<string, JToken> _patchProperties;
+        private readonly Dictionary<string, object> _patchProperties;
         private readonly EntityConfig _entityConfig;
-        private readonly EntityBuilder<TEntity> _builder;
 
         public bool HasKey => string.IsNullOrEmpty(_entityConfig.KeyPropertyName) ?
             true :
             !_patchProperties.ContainsKey(_entityConfig.KeyPropertyName);
 
-        public JToken Key => HasKey ? null : _patchProperties[_entityConfig.KeyPropertyName];
+        public object Key => HasKey ? null : _patchProperties[_entityConfig.KeyPropertyName];
 
         // IDictionary properties
         public int Count => _patchProperties.Count;
-        public bool IsReadOnly => ((IDictionary<string, JToken>)_patchProperties).IsReadOnly;
+        public bool IsReadOnly => ((IDictionary<string, object>)_patchProperties).IsReadOnly;
         public ICollection<string> Keys => _patchProperties.Keys;
-        public ICollection<JToken> Values => _patchProperties.Values;
+        public ICollection<object> Values => _patchProperties.Values;
 
         public PatchObject()
         {
             _entityConfig = ConfigurationContainer.Instance.GetConfig<TEntity>();
-            _patchProperties = new Dictionary<string, JToken>(_entityConfig?.CaseSensitive ?? false ?
+            _patchProperties = new Dictionary<string, object>(_entityConfig?.CaseSensitive ?? false ?
                 StringComparer.Ordinal :
                 StringComparer.OrdinalIgnoreCase);
-
-            _builder = new EntityBuilder<TEntity>(_patchProperties, _entityConfig);
         }
 
         public void Patch(TEntity entity)
         {
-            _builder.PatchEntity(entity);
+            EntityBuilder<TEntity>.PatchEntity(entity, _patchProperties, _entityConfig);
         }
 
         public TEntity CreateEntity()
         {
-            return _builder.BuildEntity();
+            return EntityBuilder<TEntity>.BuildEntity(_patchProperties, _entityConfig);
         }
 
-        public IEnumerator<KeyValuePair<string, JToken>> GetEnumerator()
+        public IEnumerator<KeyValuePair<string, object>> GetEnumerator()
         {
             return _patchProperties.GetEnumerator();
         }
 
-        public void Add(KeyValuePair<string, JToken> item)
+        public void Add(KeyValuePair<string, object> item)
         {
             _patchProperties.Add(item.Key, item.Value);
         }
@@ -61,22 +57,22 @@ namespace Patcheetah
             _patchProperties.Clear();
         }
 
-        public bool Contains(KeyValuePair<string, JToken> item)
+        public bool Contains(KeyValuePair<string, object> item)
         {
             return _patchProperties.Contains(item);
         }
 
-        public void CopyTo(KeyValuePair<string, JToken>[] array, int arrayIndex)
+        public void CopyTo(KeyValuePair<string, object>[] array, int arrayIndex)
         {
-            ((IDictionary<string, JToken>)_patchProperties).CopyTo(array, arrayIndex);
+            ((IDictionary<string, object>)_patchProperties).CopyTo(array, arrayIndex);
         }
 
-        public bool Remove(KeyValuePair<string, JToken> item)
+        public bool Remove(KeyValuePair<string, object> item)
         {
             return _patchProperties.Remove(item.Key);
         }
 
-        public void Add(string key, JToken value)
+        public void Add(string key, object value)
         {
             _patchProperties.Add(key, value);
         }
@@ -91,12 +87,12 @@ namespace Patcheetah
             return _patchProperties.Remove(key);
         }
 
-        public bool TryGetValue(string key, out JToken value)
+        public bool TryGetValue(string key, out object value)
         {
             return _patchProperties.TryGetValue(key, out value);
         }
 
-        public JToken this[string key]
+        public object this[string key]
         {
             get => _patchProperties[key];
             set { _patchProperties[key] = value; }

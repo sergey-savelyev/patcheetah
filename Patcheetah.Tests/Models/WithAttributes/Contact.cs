@@ -14,7 +14,7 @@ namespace Patcheetah.Tests.Models.WithAttributes
 
         public string Value { get; set; }
 
-        [ConfiguredPatching]
+        // [ConfiguredPatching]
         public UserAddress Address { get; set; }
     }
 }

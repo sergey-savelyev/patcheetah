@@ -4,7 +4,6 @@ using System.Linq;
 using System.Reflection;
 using Patcheetah.Attributes;
 using Patcheetah.Exceptions;
-using Newtonsoft.Json;
 
 namespace Patcheetah.Configuration
 {
@@ -15,10 +14,22 @@ namespace Patcheetah.Configuration
         public static ConfigurationContainer Instance => _container ?? (_container = new ConfigurationContainer());
 
         private IDictionary<string, EntityConfig> _configs;
+        private List<IConfigurationBehaviour> _configurationBehaviours;
 
         private ConfigurationContainer()
         {
             _configs = new Dictionary<string, EntityConfig>();
+            _configurationBehaviours = new List<IConfigurationBehaviour>();
+        }
+
+        public void RegisterBehaviour(IConfigurationBehaviour behaviour)
+        {
+            if (_configurationBehaviours.Any(x => x.Id == behaviour.Id))
+            {
+                throw new Exception($"Configuration behaviour with id {behaviour.Id} already added");
+            }
+
+            _configurationBehaviours.Add(behaviour);
         }
 
         public void RegisterConfig<TEntity>(EntityConfig config)
@@ -71,7 +82,7 @@ namespace Patcheetah.Configuration
                 entityConfig = new EntityConfig(caseSensitive, type);
             }
 
-            // it has parameter equality comparison inside, so if config was just created, it won't be setted again
+            // it has parameter equality comparison inside, so if config just created, it don't set again
             entityConfig.SetCaseSensitive(caseSensitive);
 
             var properties = type.GetProperties();
@@ -80,30 +91,21 @@ namespace Patcheetah.Configuration
             foreach (var property in properties)
             {
                 var attributes = property.GetCustomAttributes();
-                var jsonPropertyAttribute = property.GetCustomAttribute<JsonPropertyAttribute>();
-
-                // Alias or jsonProp attribute should be proceeded first! It's important.
-
-                if (jsonPropertyAttribute != null)
-                {
-                    entityConfig.SetPropertyAlias(property.Name, jsonPropertyAttribute.PropertyName);
-                }
-
                 foreach (var attribute in attributes)
                 {
-                    if (attribute is IgnoreOnPatchingAttribute || attribute is JsonIgnoreAttribute)
+                    if (attribute is JsonAliasAttribute aliasAttribute)
                     {
-                        entityConfig.SetPropertyIgnored(property.Name);
+                        entityConfig.UseJsonAlias(property.Name, aliasAttribute.Alias);
+                    }
+
+                    if (attribute is IgnoreOnPatchingAttribute)
+                    {
+                        entityConfig.IgnoreOnPatching(property.Name);
                     }
 
                     if (attribute is RequiredOnPatchingAttribute)
                     {
-                        entityConfig.SetPropertyRequired(property.Name);
-                    }
-
-                    if (attribute is ConfiguredPatchingAttribute)
-                    {
-                        entityConfig.SetPropertyUsedInternalConfig(property.Name);
+                        entityConfig.Required(property.Name);
                     }
 
                     if (attribute is PatchingKeyAttribute keyPropertyAttribute)
@@ -116,6 +118,11 @@ namespace Patcheetah.Configuration
                         entityConfig.SetKeyProperty(property.Name, keyPropertyAttribute.Strict);
                         keyPropertyAttributeFound = true;
                     }
+                }
+
+                foreach (var behaviour in _configurationBehaviours)
+                {
+                    behaviour.Configure(property, attributes, entityConfig);
                 }
             }
 

@@ -1,8 +1,8 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Patcheetah.Mapping;
+using Patcheetah.Patching;
 
 namespace Patcheetah.Configuration
 {
@@ -54,32 +54,27 @@ namespace Patcheetah.Configuration
             _configuredProperties = new Dictionary<string, PropertyConfiguration>(stringComparer);
         }
 
-        internal void SetPropertyMapping(string propertyName, MappingHandler handler)
+        public void UseMapping(string propertyName, MappingHandler handler)
         {
             GetPropertyConfiguration(propertyName).MappingHandler = handler;
         }
 
-        internal void SetPropertyIgnored(string propertyName)
+        public void IgnoreOnPatching(string propertyName)
         {
             GetPropertyConfiguration(propertyName).Ignored = true;
         }
 
-        internal void SetPropertyRequired(string propertyName)
+        public void Required(string propertyName)
         {
             GetPropertyConfiguration(propertyName).Required = true;
         }
 
-        internal void SetPropertyAlias(string propertyName, string alias)
+        public void UseJsonAlias(string propertyName, string alias)
         {
-            GetPropertyConfiguration(propertyName).Alias = alias;
+            GetPropertyConfiguration(propertyName).Name = alias;
         }
 
-        internal void SetPropertyUsedInternalConfig(string propertyName)
-        {
-            GetPropertyConfiguration(propertyName).HasInternalConfig = true;
-        }
-
-        internal void SetCaseSensitive(bool caseSensitive)
+        public void SetCaseSensitive(bool caseSensitive)
         {
             if (caseSensitive == this.CaseSensitive)
             {
@@ -95,7 +90,7 @@ namespace Patcheetah.Configuration
             CaseSensitive = caseSensitive;
         }
 
-        internal void SetKeyProperty(string propertyName, bool strict)
+        public void SetKeyProperty(string propertyName, bool strict)
         {
             var prevKey = _configuredProperties.FirstOrDefault(x => x.Value.Key);
             if (!string.IsNullOrEmpty(prevKey.Key))
@@ -107,14 +102,19 @@ namespace Patcheetah.Configuration
             GetPropertyConfiguration(propertyName).Key = true;
         }
 
-        internal void SetPropertyBeforePatchCallback(string propertyName, Action<PropertyChangedEventArgs> callback)
+        public void SetPropertyBeforePatchCallback(string propertyName, Action<PropertyChangedEventArgs> callback)
         {
             GetPropertyConfiguration(propertyName).BeforePatchCallback = callback;
         }
 
-        internal void SetPropertyAfterPatchCallback(string propertyName, Action<PropertyChangedEventArgs> callback)
+        public void SetPropertyAfterPatchCallback(string propertyName, Action<PropertyChangedEventArgs> callback)
         {
             GetPropertyConfiguration(propertyName).AfterPatchCallback = callback;
+        }
+
+        public IEnumerator<PropertyConfiguration> GetEnumerator()
+        {
+            return _configuredProperties.Select(x => x.Value).GetEnumerator();
         }
 
         private PropertyConfiguration GetPropertyConfiguration(string propertyName)
@@ -126,11 +126,6 @@ namespace Patcheetah.Configuration
             }
 
             return _configuredProperties[propertyName];
-        }
-
-        public IEnumerator<PropertyConfiguration> GetEnumerator()
-        {
-            return _configuredProperties.Select(x => x.Value).GetEnumerator();
         }
     }
 }

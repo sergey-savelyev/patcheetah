@@ -4,9 +4,9 @@ using System.Linq;
 using Patcheetah.Exceptions;
 using Patcheetah.Tests.Models;
 using Patcheetah.Tests.Models.Abstract;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NUnit.Framework;
+using Patcheetah.Patching;
 
 namespace Patcheetah.Tests
 {
@@ -68,95 +68,6 @@ namespace Patcheetah.Tests
         }
 
         [Test]
-        public void JsonPropertyAttributeTest()
-        {
-            var request = GetPatchRequestWithFields("Id", "LastSeenFrom", "Personal");
-            var innerAddressString = request["Personal"]["Address"]["Address"].ToString();
-            var model = request.CreateEntity();
-
-            Assert.NotNull(innerAddressString);
-            Assert.AreEqual(innerAddressString, model.PersonalInfo.Address.FullAddress);
-        }
-
-        [Test]
-        public void RecursivePatcheetahPatchingTest()
-        {
-            var model = new TUser
-            {
-                PersonalInfo = new TPersonalInfo
-                {
-                    Birthday = new DateTime(1985, 01, 01)
-                }
-            };
-            var birthdayFromModel = model.PersonalInfo.Birthday.ToString();
-            var request = GetPatchRequestWithFields("Id", "LastSeenFrom", "Personal");
-
-            request.Patch(model);
-
-            Assert.AreEqual(birthdayFromModel, model.PersonalInfo.Birthday.ToString());
-
-            var brokenRequestJObject = JToken.FromObject(request).DeepClone();
-            (brokenRequestJObject["Personal"]["Address"] as JObject).Remove("Address"); // remove required field
-            var brokenRequest = brokenRequestJObject.ToObject<PatchObject<TUser>>();
-
-            var ex = Assert.Throws<RequiredPropertiesMissedException>(() => brokenRequest.CreateEntity());
-            Assert.AreEqual("Address", ex.Properties.First());
-        }
-
-        [Test]
-        public void ArrayPatchingTest()
-        {
-            var request = GetPatchRequestWithFields("LastSeenFrom", "AccessRights", "ArchivedContacts", "Contacts");
-            var accessRightsArrayFromRequestCount = request["AccessRights"].ToObject<string[]>().Length;
-            var archivedContactsFromRequestCount = request["ArchivedContacts"].ToObject<TContact[]>().Length;
-
-            var contactWithSameKey = request["Contacts"].ToObject<List<TContact>>().First();
-            var requestContactType = contactWithSameKey.Type;
-
-            var enumValues = Enum.GetValues(typeof(ContactType));
-            foreach (var enumVal in enumValues)
-            {
-                if ((ContactType)enumVal != requestContactType)
-                {
-                    contactWithSameKey.Type = (ContactType)enumVal;
-                }
-            }
-            
-            contactWithSameKey.Address.FullAddress = "New full address";
-
-            var model = new TUser
-            {
-                AccessRights = new[] { "Read", "Write", "Approve" },
-                ArchivedContacts = new[]
-                {
-                    new TContact
-                    {
-                        Type = Models.ContactType.Email,
-                        Id = Guid.NewGuid().ToString(),
-                        Address = null
-                    }
-                },
-                Contacts = new List<TContact>
-                {
-                    new TContact
-                    {
-                        Id = null,
-                        Type = Models.ContactType.PhoneNumber
-                    },
-                    contactWithSameKey
-                }
-            };
-
-            request.Patch(model);
-
-            Assert.AreEqual(model.AccessRights.Length, accessRightsArrayFromRequestCount);
-            Assert.AreEqual(model.ArchivedContacts.Length, archivedContactsFromRequestCount);
-            Assert.AreEqual(model.Contacts.Count, 4); // change 4 to computed var
-            Assert.AreEqual(model.Contacts.FirstOrDefault(x => x.Id == null)?.Type, Models.ContactType.PhoneNumber);
-            Assert.AreNotEqual(model.Contacts.FirstOrDefault(x => x.Id == contactWithSameKey.Id)?.Type, requestContactType);
-        }
-
-        [Test]
         public void WrongTypeTest()
         {
             var request = GetPatchRequestWithFields("LastSeenFrom", "AccessRights");
@@ -171,7 +82,7 @@ namespace Patcheetah.Tests
                 AccessRights = new[] { "Full" }
             };
 
-            var exception = Assert.Throws<JsonReaderException>(() =>
+            var exception = Assert.Throws<ArgumentException>(() =>
             {
                 request.Patch(model);
             });

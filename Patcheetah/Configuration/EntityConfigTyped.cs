@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq.Expressions;
 using Patcheetah.Mapping;
+using Patcheetah.Patching;
 
 namespace Patcheetah.Configuration
 {
@@ -16,7 +17,7 @@ namespace Patcheetah.Configuration
             var handler = new MappingHandler(obj => mappingHandler((TReturn)obj));
             var propName = ExtractPropertyName(property);
 
-            SetPropertyMapping(propName, handler);
+            UseMapping(propName, handler);
 
             return this;
         }
@@ -24,7 +25,15 @@ namespace Patcheetah.Configuration
         public EntityConfigTyped<TEntity> IgnoreOnPatching<TReturn>(Expression<Func<TEntity, TReturn>> property)
         {
             var propName = ExtractPropertyName(property);
-            SetPropertyIgnored(propName);
+            IgnoreOnPatching(propName);
+
+            return this;
+        }
+
+        public EntityConfigTyped<TEntity> UseJsonAlias<TReturn>(Expression<Func<TEntity, TReturn>> property, string alias)
+        {
+            var propName = ExtractPropertyName(property);
+            UseJsonAlias(propName, alias);
 
             return this;
         }
@@ -32,15 +41,7 @@ namespace Patcheetah.Configuration
         public EntityConfigTyped<TEntity> Required<TReturn>(Expression<Func<TEntity, TReturn>> property)
         {
             var propName = ExtractPropertyName(property);
-            SetPropertyRequired(propName);
-
-            return this;
-        }
-
-        public EntityConfigTyped<TEntity> UsePatcheetahConfig<TReturn>(Expression<Func<TEntity, TReturn>> property)
-        {
-            var propName = ExtractPropertyName(property);
-            SetPropertyUsedInternalConfig(propName);
+            Required(propName);
 
             return this;
         }

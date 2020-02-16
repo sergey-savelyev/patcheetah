@@ -19,15 +19,15 @@ namespace Patcheetah.Tests.Models.WithAttributes
         [RequiredOnPatching]
         public string LastSeenFrom { get; set; }
 
-        [ConfiguredPatching]
-        [JsonProperty("Personal")]
+        // [ConfiguredPatching]
+        [JsonAlias("Personal")]
         public PersonalInfo PersonalInfo { get; set; }
 
         public string[] AccessRights { get; set; }
 
         public Contact[] ArchivedContacts { get; set; }
 
-        [ConfiguredPatching]
+        // [ConfiguredPatching]
         public List<Contact> Contacts { get; set; }
 
         public UserRole Role { get; set; }

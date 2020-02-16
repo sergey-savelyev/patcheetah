@@ -1,5 +1,4 @@
 ﻿using NUnit.Framework;
-using Patcheetah.Configuration;
 using Patcheetah.Tests.Models.Standard;
 
 namespace Patcheetah.Tests
@@ -8,24 +7,25 @@ namespace Patcheetah.Tests
     {
         protected override void Setup()
         {
-            PatcheetahConfig.CreateFor<User>()
+            PatchConfig.CreateForEntity<User>()
                 .Required(x => x.LastSeenFrom)
                 .IgnoreOnPatching(x => x.Username)
-                .UsePatcheetahConfig(x => x.PersonalInfo)
-                .UsePatcheetahConfig(x => x.Contacts)
+                .UseJsonAlias(x => x.PersonalInfo, "Personal")
+                // .UsePatcheetahConfig(x => x.PersonalInfo)
+                // .UsePatcheetahConfig(x => x.Contacts)
                 .Register(x => x.Id);
 
-            PatcheetahConfig.CreateFor<PersonalInfo>()
+            PatchConfig.CreateForEntity<PersonalInfo>()
                 .IgnoreOnPatching(x => x.Birthday)
-                .UsePatcheetahConfig(x => x.Address)
+                // .UsePatcheetahConfig(x => x.Address)
                 .Register();
 
-            PatcheetahConfig.CreateFor<Contact>()
+            PatchConfig.CreateForEntity<Contact>()
                 .IgnoreOnPatching(x => x.Type)
-                .UsePatcheetahConfig(x => x.Address)
+                // .UsePatcheetahConfig(x => x.Address)
                 .Register(x => x.Id);
 
-            PatcheetahConfig.CreateFor<UserAddress>()
+            PatchConfig.CreateForEntity<UserAddress>()
                 .Required(x => x.FullAddress)
                 .Register();
         }

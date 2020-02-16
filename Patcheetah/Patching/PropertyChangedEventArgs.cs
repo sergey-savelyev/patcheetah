@@ -1,7 +1,6 @@
 using System;
-using System.Reflection;
 
-namespace Patcheetah
+namespace Patcheetah.Patching
 {
     public class PropertyChangedEventArgs : EventArgs
     {

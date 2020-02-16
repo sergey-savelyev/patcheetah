@@ -1,5 +1,4 @@
 ﻿using System.Linq;
-using Patcheetah.Configuration;
 using Patcheetah.Exceptions;
 using Patcheetah.Tests.Models.WithAttributes;
 using NUnit.Framework;
@@ -10,8 +9,9 @@ namespace Patcheetah.Tests
     {
         protected override void Setup()
         {
-            PatcheetahConfig.CreateFor<User>()
-                // .Required(x => x.LastSeenFrom) -> instead of method setup, we'll install it from attribute
+            PatchConfig
+                .CreateForEntity<User>()
+                // .Required(x => x.LastSeenFrom) -> we don't need this anymore. Instead of method setup, we'll install it from attribute
                 // .IgnoreOnPatching(x => x.Username) -> Same situation, let's install it from attribute
                 .Register(x => x.NickName); // Set name as key but replace it by id from attributes
         }
@@ -33,7 +33,7 @@ namespace Patcheetah.Tests
             // ignore prop overriding
 
             request = GetPatchRequestWithFields("LastSeenFrom", "Username");
-            var requestUsername = request["Username"].ToObject<string>();
+            var requestUsername = request["Username"].ToString();
             var modelUsername = "RandomPerson";
             model.Username = modelUsername;
 

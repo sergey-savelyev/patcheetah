@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using Patcheetah.Attributes;
 using Patcheetah.Tests.Models.Abstract;
 
@@ -16,7 +15,7 @@ namespace Patcheetah.Tests.Models.WithAttributes
         [IgnoreOnPatching]
         public DateTime Birthday { get; set; }
 
-        [ConfiguredPatching]
+        // [ConfiguredPatching]
         public UserAddress Address { get; set; }
     }
 }

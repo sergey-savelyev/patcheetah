@@ -2,6 +2,7 @@
 using Patcheetah.Tests.Models;
 using Patcheetah.Tests.Models.Standard;
 using Newtonsoft.Json.Linq;
+using Patcheetah.Patching;
 
 namespace Patcheetah.Tests
 {
