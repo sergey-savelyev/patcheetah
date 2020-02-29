@@ -11,15 +11,14 @@
     <PackageReference Include="NUnit3TestAdapter" Version="3.13.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.2.0" />
   </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\Patcheetah\Patcheetah.csproj" />
-  </ItemGroup>
   <ItemGroup>
     <Folder Include="Models\" />
     <Folder Include="Models\Common\" />
     <Folder Include="Models\Standard\" />
     <Folder Include="Models\WithAttributes\" />
     <Folder Include="Models\Abstract\" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Patcheetah\Patcheetah.csproj" />
   </ItemGroup>
 </Project>
