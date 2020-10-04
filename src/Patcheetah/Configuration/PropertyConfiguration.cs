@@ -7,7 +7,7 @@ namespace Patcheetah.Configuration
 {
     public class PropertyConfiguration
     {
-        public bool Key { get; set; }
+        public bool IsKey { get; set; }
 
         public string Name { get; set; }
 
@@ -17,9 +17,9 @@ namespace Patcheetah.Configuration
 
         public MappingHandler MappingHandler { get; set; }
 
-        public Action<PropertyChangedEventArgs> BeforePatchCallback { get; set; }
+        public Func<PropertyChangedEventArgs, object> BeforeMappingCallback { get; set; }
 
-        public Action<PropertyChangedEventArgs> AfterPatchCallback { get; set; }
+        public Action<PropertyChangedEventArgs> AfterSetCallback { get; set; }
 
         public Dictionary<string, object> ExtraSettings { get; set; } = new Dictionary<string, object>();
 

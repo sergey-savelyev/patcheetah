@@ -10,26 +10,14 @@ using Patcheetah.Patching;
 
 namespace Patcheetah.Tests
 {
-    public abstract class TestBase<TUser, TPersonalInfo, TContact, TUserAddress>
-        where TUser : class, IUser<TPersonalInfo, TContact, TUserAddress>, new()
-        where TPersonalInfo : class, IPersonalInfo<TUserAddress>, new()
-        where TContact : class, IContact<TUserAddress>, new()
-        where TUserAddress : class, IUserAddress, new()
+    public abstract class TestBase<TUser>
+        where TUser : class, IUser, new()
     {
         [OneTimeSetUp]
         public void SetupInternal()
         {
+            PatchEngine.Reset();
             Setup();
-        }
-
-        [Test]
-        public void KeyTest()
-        {
-            var requestWithKey = GetPatchRequestWithFields("Id", "LastSeenFrom");
-            Assert.IsFalse(requestWithKey.HasKey);
-
-            var requestWithoutKey = GetPatchRequestWithFields("LastSeenFrom");
-            Assert.IsTrue(requestWithoutKey.HasKey);
         }
 
         [Test]
@@ -56,15 +44,15 @@ namespace Patcheetah.Tests
             var model = new TUser
             {
                 Id = Guid.NewGuid().ToString(),
-                Username = "Testee",
+                Login = "Testee",
             };
 
-            var usernameValue = model.Username;
-            var request = GetPatchRequestWithFields("Id", "Username", "LastSeenFrom");
+            var loginValue = model.Login;
+            var request = GetPatchRequestWithFields("Id", "Login", "LastSeenFrom");
 
             request.Patch(model);
 
-            Assert.AreEqual(model.Username, usernameValue);
+            Assert.AreEqual(model.Login, loginValue);
         }
 
         [Test]
@@ -96,35 +84,20 @@ namespace Patcheetah.Tests
             request.Add("Personal", null);
             var model = new TUser
             {
-                NickName = "Testee",
-                PersonalInfo = new TPersonalInfo
+                PersonalInfo = new PersonalInfo
                 {
-                    Gender = Gender.Unknown,
-                    Address = null,
                     Birthday = new DateTime(1987, 02, 02),
                     FirstName = "Random",
                     LastName = "Person"
                 },
-                Contacts = new List<TContact>
+                Contacts = new List<Contact>
                 {
-                    new TContact
+                    new Contact
                     {
-                        Id = Guid.NewGuid().ToString(),
-                        Address = null,
-                        Type = ContactType.Email,
+                        Type = "Email",
                         Value = "random@mail.test"
                     }
                 },
-                ArchivedContacts = new TContact[]
-                {
-                    new TContact
-                    {
-                        Id = Guid.NewGuid().ToString(),
-                        Address = null,
-                        Type = ContactType.Email,
-                        Value = "random@mail.test"
-                    }
-                }
             };
 
             request.Patch(model);
@@ -133,10 +106,10 @@ namespace Patcheetah.Tests
 
             // property with no modelee config
             request = GetPatchRequestWithFields("LastSeenFrom");
-            request.Add("NickName", null);
+            request.Add("Username", null);
             request.Patch(model);
 
-            Assert.AreEqual(null, model.NickName);
+            Assert.AreEqual(null, model.Username);
 
             // array with modelee config
             request = GetPatchRequestWithFields("LastSeenFrom");
@@ -147,35 +120,44 @@ namespace Patcheetah.Tests
 
             // array with no modelee config
             request = GetPatchRequestWithFields("LastSeenFrom");
-            request.Add("ArchivedContacts", null);
+            request.Add("Personal", null);
             request.Patch(model);
 
-            Assert.AreEqual(null, model.ArchivedContacts);
+            Assert.AreEqual(null, model.PersonalInfo);
+        }
+
+        protected void KeyTest(string key)
+        {
+            var requestWithKey = GetPatchRequestWithFields(key, "LastSeenFrom");
+            Assert.IsTrue(requestWithKey.HasKey);
+
+            var requestWithoutKey = GetPatchRequestWithFields("LastSeenFrom");
+            Assert.IsFalse(requestWithoutKey.HasKey);
         }
 
         protected void CaseSensitiveTest(bool sensitive)
         {
-            var request = GetPatchRequestWithFields("LastSeenFrom", "NickName");
-            var nicknameValue = request["NickName"].ToString();
-            request.Remove("NickName", out _);
-            request.Add("nickname", nicknameValue);
+            var request = GetPatchRequestWithFields("LastSeenFrom", "Username");
+            var usernameValue = request["Username"].ToString();
+            request.Remove("Username", out _);
+            request.Add("username", usernameValue);
 
-            var modelNickname = "Testee";
+            var modelUsername = "Testee";
             var model = new TUser
             {
-                NickName = modelNickname
+                Username = modelUsername
             };
 
             request.Patch(model);
 
             if (sensitive)
             {
-                Assert.AreNotEqual(nicknameValue, model.NickName);
+                Assert.AreNotEqual(usernameValue, model.Username);
 
                 return;
             }
 
-            Assert.AreEqual(nicknameValue, model.NickName);
+            Assert.AreEqual(usernameValue, model.Username);
         }
 
         protected abstract void Setup();

@@ -22,13 +22,13 @@ namespace Patcheetah.Tests
             _originalJToken = new JObject
             {
                 { "Id", GeneratedId },
+                { "Age", new JValue((int)26) },
                 { "Username", "Patcherman" },
-                { "NickName", "Patcherman" },
+                { "Login", "Patcherman" },
                 { "LastSeenFrom", "Nokia 3310" },
                 { "Personal", GetPersonalInfo("Sergey", "Savelyev", new DateTime(1994, 4, 19)) },
                 { "AccessRights", JToken.FromObject(new string[] { "FullAccess" }) },
                 { "Contacts", GetContacts(3, "ContactValue") },
-                { "ArchivedContacts", GetContacts(3, "ArchivedContactValue") },
                 { "Role", UserRole.Admin.ToString() },
             };
         }
@@ -37,11 +37,9 @@ namespace Patcheetah.Tests
         {
             var result = new JObject
             {
-                { "Gender", GetRandomEnumValue<Gender>() },
                 { "FirstName", firstName },
                 { "LastName", lastName },
                 { "Birthday", birthday },
-                { "Address", GetUserAddress(0) }
             };
 
             return result;
@@ -64,34 +62,11 @@ namespace Patcheetah.Tests
         {
             var result = new JObject
             {
-                { "Id", Guid.NewGuid().ToString() },
-                { "Type", GetRandomEnumValue<ContactType>() },
+                { "Type", $"type_{counter}" },
                 { "Value", $"{valuePattern}_{counter}" },
-                { "Address", GetUserAddress(counter) }
             };
 
             return result;
-        }
-
-        public static JObject GetUserAddress(int counter)
-        {
-            var zipcode = new Random().Next(0, 999999);
-            var result = new JObject
-            {
-                { "Address", $"Country {counter}, City {counter}, Street {counter}, House {counter}" },
-                { "Zip", zipcode }
-            };
-
-            return result;
-        }
-
-        public static string GetRandomEnumValue<TEnum>() where TEnum : Enum
-        {
-            var values = Enum.GetValues(typeof(TEnum));
-            var randomizer = new Random();
-            var randomValue = (TEnum)values.GetValue(randomizer.Next(values.Length));
-
-            return randomValue.ToString();
         }
 
         public static JToken GetRequestWithFields(params string[] keys)

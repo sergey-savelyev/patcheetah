@@ -1,35 +1,30 @@
-﻿using System;
+﻿using Patcheetah.Configuration;
+using Patcheetah.Exceptions;
+using Patcheetah.Mapping;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using Patcheetah.Configuration;
-using Patcheetah.Exceptions;
-using Patcheetah.Mapping;
 
 namespace Patcheetah.Patching
 {
-    public static class EntityBuilder<TEntity> where TEntity : class, new()
+    public sealed class DefaultEntityPatcher : IEntityPatcher
     {
-        public static void PatchEntity(TEntity model, IDictionary<string, object> patchData, EntityConfig config)
+        public TEntity BuildNew<TEntity>(IDictionary<string, object> patchData, EntityConfig config)
+            where TEntity: class
         {
-            Build(patchData, typeof(TEntity), config, model);
-        }
-
-        public static TEntity BuildEntity(IDictionary<string, object> patchData, EntityConfig config)
-        {
-            var result = Build(patchData, typeof(TEntity), config);
+            var result = BuildEntity(patchData, typeof(TEntity), config);
 
             return result as TEntity;
         }
 
-        public static TEntity BuildEntity(TEntity model, IDictionary<string, object> patchData, EntityConfig config)
+        public void Patch<TEntity>(TEntity model, IDictionary<string, object> patchData, EntityConfig config)
+            where TEntity : class
         {
-            var result = Build(patchData, typeof(TEntity), config, model);
-
-            return result as TEntity;
+            BuildEntity(patchData, typeof(TEntity), config, model);
         }
 
-        public static object Build(IDictionary<string, object> data, Type type, EntityConfig config, object entityToPatch = null)
+        public static object BuildEntity(IDictionary<string, object> data, Type type, EntityConfig config, object entityToPatch = null)
         {
             var properties = type.GetProperties();
             var configuredProperties = config.ConfiguredProperties;
@@ -100,12 +95,12 @@ namespace Patcheetah.Patching
                 return;
             }
 
-            if (config.KeyPropertyName == propertyName)
+            if (config.KeyPropertyName == propertyName && config.CheckKeyOnPatching)
             {
-                if (newValue == null)
-                {
-                    throw new InvalidKeyException("Key property value can't be null");
-                }
+                //if (newValue == null)
+                //{
+                //    throw new InvalidKeyException("Key property value can't be null");
+                //}
 
                 if (!typeof(IComparable).IsAssignableFrom(property.PropertyType))
                 {
@@ -114,7 +109,7 @@ namespace Patcheetah.Patching
 
                 if (!entityBuiltFromScratch)
                 {
-                    if (config.CheckKeyOnPatching && (oldValue as IComparable).CompareTo(newValue) != 0)
+                    if ((oldValue as IComparable).CompareTo(newValue) != 0)
                     {
                         throw new KeyConcurrenceException(newValue);
                     }
@@ -123,87 +118,74 @@ namespace Patcheetah.Patching
 
             if (newValue == null)
             {
-                object nullValue = null;
+                object defaultValue = null;
 
                 if (property.PropertyType.IsValueType && Nullable.GetUnderlyingType(property.PropertyType) == null)
                 {
-                    nullValue = Activator.CreateInstance(property.PropertyType);
+                    defaultValue = Activator.CreateInstance(property.PropertyType);
                 }
 
-                property.SetValue(entityToPatch, nullValue);
+                property.SetValue(entityToPatch, defaultValue);
 
                 return;
             }
 
-            if (!entityBuiltFromScratch)
+            if (!entityBuiltFromScratch && propertyConfig.BeforeMappingCallback != null)
             {
-                InvokeBeforePatchCallback(propertyConfig, entityToPatch, oldValue, newValue);
+                newValue = propertyConfig.BeforeMappingCallback.Invoke(new PropertyChangedEventArgs
+                {
+                    Entity = entityToPatch,
+                    OldValue = oldValue,
+                    NewValue = newValue,
+                    PropertyConfiguration = propertyConfig
+                });
             }
 
-            newValue = MapValue(newValue, property, propertyConfig);
-
-            foreach (var mutator in MutatorsContainer.Instance.Mutators)
-            {
-                newValue = mutator.MutateNewValueForProperty(newValue, property, propertyConfig, oldValue);
-            }
+            newValue = MapValue(newValue, property.PropertyType, propertyConfig);
 
             property.SetValue(entityToPatch, newValue);
 
             if (!entityBuiltFromScratch)
             {
-                InvokeAfterPatchCallback(propertyConfig, entityToPatch, oldValue, newValue);
+                propertyConfig.AfterSetCallback?.Invoke(new PropertyChangedEventArgs
+                {
+                    Entity = entityToPatch,
+                    OldValue = oldValue,
+                    NewValue = newValue,
+                    PropertyConfiguration = propertyConfig
+                });
             }
         }
 
-        private static void InvokeBeforePatchCallback(PropertyConfiguration config, object patchedEntity, object oldPropertyValue, object newPropertyValue)
+        private static object MapValue(object value, Type valueType, PropertyConfiguration configuration)
         {
-            config.BeforePatchCallback?.Invoke(new PropertyChangedEventArgs
-            {
-                Entity = patchedEntity,
-                SourceValue = oldPropertyValue,
-                TargetValue = newPropertyValue
-            });
-        }
-
-        private static void InvokeAfterPatchCallback(PropertyConfiguration config, object patchedEntity, object oldPropertyValue, object newPropertyValue)
-        {
-            config.AfterPatchCallback?.Invoke(new PropertyChangedEventArgs
-            {
-                Entity = patchedEntity,
-                SourceValue = oldPropertyValue,
-                TargetValue = newPropertyValue
-            });
-        }
-
-        private static object MapValue(object value, PropertyInfo propertyInfo, PropertyConfiguration configuration)
-        {
-            var typeName = propertyInfo.PropertyType.Name;
-            var globalHandler = MappingHandlersContainer.Instance.GlobalMappingHandler;
-            var typeHandler = MappingHandlersContainer.Instance.GetHandler(propertyInfo.PropertyType);
+            var globalHandler = PatchEngine.Config.GlobalMappingHandler;
+            var typeHandler = PatchEngine.Config.GetMappingHandlerForType(valueType);
             var propertyHandler = configuration.MappingHandler;
 
             if (globalHandler != null)
             {
                 var globalHandlerResult = globalHandler(value);
-                if (!globalHandlerResult.Skip)
+                if (!globalHandlerResult.Skipped)
                     value = globalHandlerResult.Value;
             }
 
             if (typeHandler != null)
             {
                 var typeHandlerResult = typeHandler(value);
-                if (!typeHandlerResult.Skip)
+                if (!typeHandlerResult.Skipped)
                     value = typeHandlerResult.Value;
             }
 
             if (propertyHandler != null)
             {
                 var propertyHandlerResult = propertyHandler(value);
-                if (!propertyHandlerResult.Skip)
+                if (!propertyHandlerResult.Skipped)
                     value = propertyHandlerResult.Value;
             }
 
             return value;
         }
+
     }
 }

@@ -1,28 +1,24 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace Patcheetah.Tests.Models.Abstract
 {
-    public interface IUser<TPersonalInfo, TContact, TUserAddress>
-        where TPersonalInfo : IPersonalInfo<TUserAddress>
-        where TContact : IContact<TUserAddress>
-        where TUserAddress : IUserAddress
+    public interface IUser
     {
         public string Id { get; set; }
 
+        public long Age { get; set; }
+
         public string Username { get; set; }
 
-        public string NickName { get; set; }
+        public string Login { get; set; }
 
         public string LastSeenFrom { get; set; }
 
-        public TPersonalInfo PersonalInfo { get; set; }
+        public PersonalInfo PersonalInfo { get; set; }
 
         public string[] AccessRights { get; set; }
 
-        public List<TContact> Contacts { get; set; }
-
-        public TContact[] ArchivedContacts { get; set; }
+        public List<Contact> Contacts { get; set; }
 
         public UserRole Role { get; set; }
     }

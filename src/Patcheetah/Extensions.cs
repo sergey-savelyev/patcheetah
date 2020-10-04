@@ -5,15 +5,6 @@ namespace Patcheetah
 {
     public static class Extensions
     {
-        public static void AddIfNotExist<T>(this ICollection<T> list, T element)
-            where T : IComparable
-        {
-            if (!list.Contains(element))
-            {
-                list.Add(element);
-            }
-        }
-
         public static void RewriteIfExist<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TKey key, TValue value)
             where TKey : IComparable
         {

@@ -5,13 +5,15 @@ using Newtonsoft.Json;
 
 namespace Patcheetah.Tests.Models.Standard
 {
-    public class User : IUser<PersonalInfo, Contact, UserAddress>
+    public class User : IUser
     {
         public string Id { get; set; }
 
+        public long Age { get; set; }
+
         public string Username { get; set; }
 
-        public string NickName { get; set; }
+        public string Login { get; set; }
 
         public string LastSeenFrom { get; set; }
 

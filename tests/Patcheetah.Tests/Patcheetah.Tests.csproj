@@ -12,8 +12,6 @@
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.2.0" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Models\" />
-    <Folder Include="Models\Common\" />
     <Folder Include="Models\Standard\" />
     <Folder Include="Models\WithAttributes\" />
     <Folder Include="Models\Abstract\" />

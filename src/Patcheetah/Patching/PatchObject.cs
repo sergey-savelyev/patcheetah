@@ -7,14 +7,14 @@ using Patcheetah.Configuration;
 namespace Patcheetah.Patching
 {
     public class PatchObject<TEntity> : IDictionary<string, object>
-        where TEntity : class, new()
+        where TEntity : class
     {
         private readonly Dictionary<string, object> _patchProperties;
         private readonly EntityConfig _entityConfig;
 
         public bool HasKey => string.IsNullOrEmpty(_entityConfig.KeyPropertyName) ?
-            true :
-            !_patchProperties.ContainsKey(_entityConfig.KeyPropertyName);
+            false :
+            _patchProperties.ContainsKey(_entityConfig.KeyPropertyName);
 
         public object Key => HasKey ? null : _patchProperties[_entityConfig.KeyPropertyName];
 
@@ -26,7 +26,7 @@ namespace Patcheetah.Patching
 
         public PatchObject()
         {
-            _entityConfig = ConfigurationContainer.Instance.GetConfig<TEntity>();
+            _entityConfig = PatchEngine.Config.GetConfig<TEntity>();
             _patchProperties = new Dictionary<string, object>(_entityConfig?.CaseSensitive ?? false ?
                 StringComparer.Ordinal :
                 StringComparer.OrdinalIgnoreCase);
@@ -34,14 +34,15 @@ namespace Patcheetah.Patching
 
         public void Patch(TEntity entity)
         {
-            EntityBuilder<TEntity>.PatchEntity(entity, _patchProperties, _entityConfig);
+            PatchEngine.Patcher.Patch(entity, _patchProperties, _entityConfig);
         }
 
         public TEntity CreateEntity()
         {
-            return EntityBuilder<TEntity>.BuildEntity(_patchProperties, _entityConfig);
+            return PatchEngine.Patcher.BuildNew<TEntity>(_patchProperties, _entityConfig);
         }
 
+        // IDictionary methods
         public IEnumerator<KeyValuePair<string, object>> GetEnumerator()
         {
             return _patchProperties.GetEnumerator();
