@@ -8,17 +8,12 @@ namespace Patcheetah
     {
         internal static PatcheetahConfig Config { get; private set; }
 
-        internal static IEntityPatcher Patcher { get; private set; }
+        internal static EntityPatcher Patcher { get; private set; }
 
         static PatchEngine()
         {
             Config = new PatcheetahConfig();
-            Patcher = new DefaultEntityPatcher();
-        }
-
-        public static void SetCustomEntityPatcher(IEntityPatcher patcher)
-        {
-            Patcher = patcher;
+            Patcher = new EntityPatcher();
         }
 
         public static void Setup(Action<PatcheetahConfig> configure)

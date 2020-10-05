@@ -1,6 +1,6 @@
-﻿using Patcheetah.Configuration;
+﻿using Newtonsoft.Json.Linq;
+using Patcheetah.Configuration;
 using Patcheetah.Exceptions;
-using Patcheetah.Mapping;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,7 +8,7 @@ using System.Reflection;
 
 namespace Patcheetah.Patching
 {
-    public sealed class DefaultEntityPatcher : IEntityPatcher
+    public sealed class EntityPatcher
     {
         public TEntity BuildNew<TEntity>(IDictionary<string, object> patchData, EntityConfig config)
             where TEntity: class
@@ -27,6 +27,18 @@ namespace Patcheetah.Patching
         public static object BuildEntity(IDictionary<string, object> data, Type type, EntityConfig config, object entityToPatch = null)
         {
             var properties = type.GetProperties();
+
+            // If config is null, we gonna use simple patching
+            if (config == null)
+            {
+                foreach (var property in properties)
+                {
+                    ProcessProperty(property, entityToPatch, data);
+                }
+
+                return entityToPatch;
+            }
+
             var configuredProperties = config.ConfiguredProperties;
             var missedRequiredPropertyNames = configuredProperties
                 .Where(x => x.Required)
@@ -63,21 +75,24 @@ namespace Patcheetah.Patching
             return entityToPatch;
         }
 
-        private static void ProcessProperty(PropertyInfo property, object entityToPatch, IDictionary<string, object> patchData, EntityConfig config, bool entityBuiltFromScratch)
+        private static void ProcessProperty(PropertyInfo property, object entityToPatch, IDictionary<string, object> patchData)
         {
-            // If config is null, we gonna use simple patching
-            if (config == null)
+            if (!patchData.ContainsKey(property.Name))
             {
-                if (!patchData.ContainsKey(property.Name))
-                {
-                    return;
-                }
-
-                property.SetValue(entityToPatch, patchData[property.Name]);
-
                 return;
             }
 
+            var oldValue = property.GetValue(entityToPatch);
+            var newValue = patchData[property.Name];
+
+            newValue = PatchNested(newValue, oldValue, property);
+            newValue = ResolveType(newValue, property);
+
+            property.SetValue(entityToPatch, newValue);
+        }
+
+        private static void ProcessProperty(PropertyInfo property, object entityToPatch, IDictionary<string, object> patchData, EntityConfig config, bool entityBuiltFromScratch)
+        {
             var propertyConfig = config[property.Name];
             var propertyName = propertyConfig?.Name ?? property.Name;
 
@@ -97,11 +112,6 @@ namespace Patcheetah.Patching
 
             if (config.KeyPropertyName == propertyName && config.CheckKeyOnPatching)
             {
-                //if (newValue == null)
-                //{
-                //    throw new InvalidKeyException("Key property value can't be null");
-                //}
-
                 if (!typeof(IComparable).IsAssignableFrom(property.PropertyType))
                 {
                     throw new InvalidKeyException(property.PropertyType);
@@ -141,6 +151,8 @@ namespace Patcheetah.Patching
                 });
             }
 
+            newValue = PatchNested(newValue, oldValue, property);
+            newValue = ResolveType(newValue, property);
             newValue = MapValue(newValue, property.PropertyType, propertyConfig);
 
             property.SetValue(entityToPatch, newValue);
@@ -155,6 +167,34 @@ namespace Patcheetah.Patching
                     PropertyConfiguration = propertyConfig
                 });
             }
+        }
+
+        private static object PatchNested(object newValue, object oldValue, PropertyInfo property)
+        {
+            if (newValue is JObject newValueJobject && PatchEngine.Config.RFC7396Enabled)
+            {
+                var nestedConfig = PatchEngine.Config.GetEntityConfig(property.PropertyType);
+                var nestedPatchData = newValueJobject.ToObject<Dictionary<string, object>>();
+                var caseInsensitiveNestedPatchData = new Dictionary<string, object>(nestedPatchData, StringComparer.OrdinalIgnoreCase);
+                newValue = BuildEntity(caseInsensitiveNestedPatchData, property.PropertyType, nestedConfig, oldValue);
+            }
+
+            return newValue;
+        }
+
+        private static object ResolveType(object value, PropertyInfo property)
+        {
+            if (value is JObject newValueJobject)
+            {
+                value = newValueJobject.ToObject(property.PropertyType);
+            }
+
+            if (value is JArray newValueJArray)
+            {
+                value = newValueJArray.ToObject(property.PropertyType);
+            }
+
+            return value;
         }
 
         private static object MapValue(object value, Type valueType, PropertyConfiguration configuration)

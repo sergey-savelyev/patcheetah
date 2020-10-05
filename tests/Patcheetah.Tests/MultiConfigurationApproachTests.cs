@@ -14,6 +14,7 @@ namespace Patcheetah.Tests
         {
             PatchEngine.Setup(cfg =>
             {
+                cfg.EnableNestedPatching();
                 cfg.EnableAttributes();
                 cfg
                     .ConfigureEntity<User>()
@@ -28,7 +29,7 @@ namespace Patcheetah.Tests
                     })
                     .AfterPatch(x => x.Id, x =>
                     {
-                        if (x.OldValue.ToString() == "trigger")
+                        if (x.OldValue?.ToString() == "trigger")
                         {
                             _flag = true;
                         }
@@ -68,6 +69,28 @@ namespace Patcheetah.Tests
             Assert.AreEqual(18, model.Age);
             Assert.IsTrue(_flag);
             Assert.AreEqual($"{nick}_1", model.Username);
+        }
+
+        [Test]
+        public void NestedPatchingTest()
+        {
+            var request = GetPatchRequestWithFields("Id", "Personal", "LastSeenFrom");
+            var model = new User
+            {
+                PersonalInfo = new Models.PersonalInfo
+                {
+                    FirstName = "Sergey",
+                    LastName = "Qwerty",
+                    Birthday = new System.DateTime(1990, 7, 15)
+                }
+            };
+
+            request.Patch(model);
+
+            Assert.AreEqual("Savelyev", model.PersonalInfo.LastName);
+            Assert.AreEqual(new System.DateTime(1990, 7, 15), model.PersonalInfo.Birthday);
+
+            // request["Personal"] as  = null;
         }
 
         [Test]

@@ -15,7 +15,9 @@ namespace Patcheetah.Configuration
         private bool _attributesEnabled = false;
         private ConcurrentDictionary<int, MappingHandler> _handlers;
 
-        public MappingHandler GlobalMappingHandler { get; private set; }
+        internal MappingHandler GlobalMappingHandler { get; private set; }
+
+        internal bool RFC7396Enabled { get; private set; }
 
         public PatcheetahConfig()
         {
@@ -29,6 +31,11 @@ namespace Patcheetah.Configuration
             RegisterConfigForType(entityConfig, typeof(TEntity));
 
             return new EntityConfigurator<TEntity>(entityConfig);
+        }
+
+        public void EnableNestedPatching()
+        {
+            RFC7396Enabled = true;
         }
 
         public void EnableAttributes()
@@ -84,7 +91,7 @@ namespace Patcheetah.Configuration
             _attributesEnabled = false;
         }
 
-        private EntityConfig GetEntityConfig(Type type)
+        internal EntityConfig GetEntityConfig(Type type)
         {
             var thash = type.GetHashCode();
 
