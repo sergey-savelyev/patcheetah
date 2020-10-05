@@ -89,6 +89,7 @@ namespace Patcheetah.Configuration
         {
             _configs.Clear();
             _attributesEnabled = false;
+            RFC7396Enabled = false;
         }
 
         internal EntityConfig GetEntityConfig(Type type)
