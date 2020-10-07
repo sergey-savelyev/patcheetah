@@ -18,7 +18,10 @@ namespace Patcheetah.Swashbuckle
 			"application/merge-patch+json"
 		};
 
-		private static bool IsPatchObjectType(Type t) => (t != null) && t.IsGenericType && (t.GetGenericTypeDefinition() == typeof(PatchObject<>));
+		private static bool IsPatchObjectType(Type t) =>
+			(t != null) &&
+			t.IsGenericType &&
+			(t.GetGenericTypeDefinition() == typeof(PatchObject<>));
 
 		public void Apply(OpenApiOperation operation, OperationFilterContext context)
 		{
@@ -56,7 +59,8 @@ namespace Patcheetah.Swashbuckle
 						}
 					}
 				}
-				else if ((parameter.Type != null) && parameter.Type.IsGenericType && (parameter.Type.GetGenericTypeDefinition() == typeof(IEnumerable<>)))
+
+				if ((parameter.Type != null) && parameter.Type.IsGenericType && (parameter.Type.GetGenericTypeDefinition() == typeof(IEnumerable<>)))
 				{
 					var patchObjectType = parameter.Type.GenericTypeArguments[0];
 					if (IsPatchObjectType(patchObjectType))
