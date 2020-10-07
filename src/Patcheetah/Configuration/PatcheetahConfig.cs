@@ -19,6 +19,8 @@ namespace Patcheetah.Configuration
 
         internal bool RFC7396Enabled { get; private set; }
 
+        internal bool GlobalCaseSensitivity { get; private set; }
+
         public PatcheetahConfig()
         {
             _configs = new ConcurrentDictionary<int, EntityConfig>();
@@ -41,6 +43,11 @@ namespace Patcheetah.Configuration
         public void EnableAttributes()
         {
             _attributesEnabled = true;
+        }
+        
+        public void SetCaseSensitivity(bool caseSensitive)
+        {
+            GlobalCaseSensitivity = caseSensitive;
         }
 
         public void SetMappingForType<T>(Func<T, MappingResultTypedWrapper<T>> mapHandler)

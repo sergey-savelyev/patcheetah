@@ -13,7 +13,7 @@ namespace Patcheetah.Configuration
 
         public bool CheckKeyOnPatching { get; internal set; }
 
-        public bool CaseSensitive { get; private set; }
+        public bool? CaseSensitive { get; private set; } = null;
 
         public string KeyPropertyName
         {
@@ -30,7 +30,7 @@ namespace Patcheetah.Configuration
 
         public string EntityTypeName { get; }
 
-        public HashSet<PropertyConfiguration> ConfiguredProperties => _configuredProperties.Select(x => x.Value).ToHashSet();
+        public List<PropertyConfiguration> ConfiguredProperties => _configuredProperties.Select(x => x.Value).ToList();
 
         public PropertyConfiguration this[string propName]
         {
@@ -88,10 +88,7 @@ namespace Patcheetah.Configuration
             }
 
             var stringComparer = caseSensitive ? StringComparer.Ordinal : StringComparer.OrdinalIgnoreCase;
-            var configuredPropertiesCopy = new KeyValuePair<string, PropertyConfiguration>[_configuredProperties.Count];
-
-            _configuredProperties.CopyTo(configuredPropertiesCopy, 0);
-            _configuredProperties = new Dictionary<string, PropertyConfiguration>(configuredPropertiesCopy, stringComparer);
+            _configuredProperties = new Dictionary<string, PropertyConfiguration>(_configuredProperties, stringComparer);
 
             CaseSensitive = caseSensitive;
         }

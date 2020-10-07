@@ -6,7 +6,7 @@ using Patcheetah.Configuration;
 
 namespace Patcheetah.Patching
 {
-    public class PatchObject<TEntity> : IDictionary<string, object>
+    public class PatchObject<TEntity> : IDictionary<string, object>, IPatchObject
         where TEntity : class
     {
         private readonly Dictionary<string, object> _patchProperties;
@@ -24,22 +24,25 @@ namespace Patcheetah.Patching
         public ICollection<string> Keys => _patchProperties.Keys;
         public ICollection<object> Values => _patchProperties.Values;
 
+        public Type EntityType { get; private set; }
+
         public PatchObject()
         {
-            _entityConfig = PatchEngine.Config.GetConfig<TEntity>();
-            _patchProperties = new Dictionary<string, object>(_entityConfig?.CaseSensitive ?? false ?
+            EntityType = typeof(TEntity);
+            _entityConfig = PatchEngineCore.Config.GetConfig<TEntity>();
+            _patchProperties = new Dictionary<string, object>(_entityConfig?.CaseSensitive ?? PatchEngineCore.Config.GlobalCaseSensitivity ?
                 StringComparer.Ordinal :
                 StringComparer.OrdinalIgnoreCase);
         }
 
-        public void Patch(TEntity entity)
+        public void ApplyTo(TEntity entity)
         {
-            PatchEngine.Patcher.Patch(entity, _patchProperties, _entityConfig);
+            PatchEngineCore.Patcher.Patch(entity, _patchProperties, _entityConfig);
         }
 
-        public TEntity CreateEntity()
+        public TEntity CreateNewEntity()
         {
-            return PatchEngine.Patcher.BuildNew<TEntity>(_patchProperties, _entityConfig);
+            return PatchEngineCore.Patcher.BuildNew<TEntity>(_patchProperties, _entityConfig);
         }
 
         // IDictionary methods

@@ -7,16 +7,20 @@ using Patcheetah.Tests.Models.Abstract;
 using Newtonsoft.Json.Linq;
 using NUnit.Framework;
 using Patcheetah.Patching;
+using Patcheetah.Tests.Helpers;
 
 namespace Patcheetah.Tests
 {
     public abstract class TestBase<TUser>
         where TUser : class, IUser, new()
     {
+        private IPatchRequestProvider<TUser> _patchRequestProvider;
+
         [OneTimeSetUp]
         public void SetupInternal()
         {
-            PatchEngine.Reset();
+            PatchEngineCore.Reset();
+            _patchRequestProvider = GetRequestProvider();
             Setup();
         }
 
@@ -26,13 +30,13 @@ namespace Patcheetah.Tests
             Assert.DoesNotThrow(() =>
             {
                 var request = GetPatchRequestWithFields("Id", "LastSeenFrom");
-                var entity = request.CreateEntity();
+                var entity = request.CreateNewEntity();
             });
 
             var exception = Assert.Throws<RequiredPropertiesMissedException>(() =>
             {
                 var request = GetPatchRequestWithFields("Id");
-                var entity = request.CreateEntity();
+                var entity = request.CreateNewEntity();
             });
 
             Assert.That(exception.Properties.First(), Is.EqualTo("LastSeenFrom"));
@@ -50,7 +54,7 @@ namespace Patcheetah.Tests
             var loginValue = model.Login;
             var request = GetPatchRequestWithFields("Id", "Login", "LastSeenFrom");
 
-            request.Patch(model);
+            request.ApplyTo(model);
 
             Assert.AreEqual(model.Login, loginValue);
         }
@@ -72,7 +76,7 @@ namespace Patcheetah.Tests
 
             var exception = Assert.Throws<ArgumentException>(() =>
             {
-                request.Patch(model);
+                request.ApplyTo(model);
             });
         }
 
@@ -100,28 +104,28 @@ namespace Patcheetah.Tests
                 },
             };
 
-            request.Patch(model);
+            request.ApplyTo(model);
 
             Assert.AreEqual(null, model.PersonalInfo);
 
             // property with no modelee config
             request = GetPatchRequestWithFields("LastSeenFrom");
             request.Add("Username", null);
-            request.Patch(model);
+            request.ApplyTo(model);
 
             Assert.AreEqual(null, model.Username);
 
             // array with modelee config
             request = GetPatchRequestWithFields("LastSeenFrom");
             request.Add("Contacts", null);
-            request.Patch(model);
+            request.ApplyTo(model);
 
             Assert.AreEqual(null, model.Contacts);
 
             // array with no modelee config
             request = GetPatchRequestWithFields("LastSeenFrom");
             request.Add("Personal", null);
-            request.Patch(model);
+            request.ApplyTo(model);
 
             Assert.AreEqual(null, model.PersonalInfo);
         }
@@ -148,7 +152,7 @@ namespace Patcheetah.Tests
                 Username = modelUsername
             };
 
-            request.Patch(model);
+            request.ApplyTo(model);
 
             if (sensitive)
             {
@@ -162,9 +166,11 @@ namespace Patcheetah.Tests
 
         protected abstract void Setup();
 
+        protected abstract IPatchRequestProvider<TUser> GetRequestProvider();
+
         protected PatchObject<TUser> GetPatchRequestWithFields(params string[] fieldNames)
         {
-            return PatchRequestsConstructor.GetRequestWithFields(fieldNames).ToObject<PatchObject<TUser>>();
+            return _patchRequestProvider.GetPatchObjectWithFields(fieldNames);
         }
     }
 }

@@ -1,21 +1,19 @@
 ﻿using NUnit.Framework;
+using Patcheetah.Configuration;
 using Patcheetah.Tests.Models.Standard;
 
 namespace Patcheetah.Tests
 {
-    public class SetupFromConfigTests : TestBase<User>
+    public abstract class SetupFromConfigTests : TestBase<User>
     {
-        protected override void Setup()
+        protected void Configure(PatcheetahConfig config)
         {
-            PatchEngine.Setup(cfg =>
-            {
-                cfg
-                    .ConfigureEntity<User>()
-                    .Required(x => x.LastSeenFrom)
-                    .IgnoreOnPatching(x => x.Login)
-                    .UseJsonAlias(x => x.PersonalInfo, "Personal")
-                    .SetKey(x => x.Id);
-            });
+            config
+                .ConfigureEntity<User>()
+                .Required(x => x.LastSeenFrom)
+                .IgnoreOnPatching(x => x.Login)
+                .UseJsonAlias(x => x.PersonalInfo, "Personal")
+                .SetKey(x => x.Id);
         }
 
         [Test]

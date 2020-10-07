@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netcoreapp3.0</TargetFramework>
@@ -17,6 +17,7 @@
     <Folder Include="Models\Abstract\" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Patcheetah\Patcheetah.csproj" />
+    <ProjectReference Include="..\..\src\Patcheetah.JsonNET\Patcheetah.JsonNET.csproj" />
+    <ProjectReference Include="..\..\src\Patcheetah.SystemText\Patcheetah.SystemText.csproj" />
   </ItemGroup>
 </Project>

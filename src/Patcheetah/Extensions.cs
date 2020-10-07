@@ -1,19 +1,17 @@
+using Patcheetah.Patching;
 using System;
-using System.Collections.Generic;
+using System.Linq.Expressions;
 
 namespace Patcheetah
 {
     public static class Extensions
     {
-        public static void RewriteIfExist<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TKey key, TValue value)
-            where TKey : IComparable
+        public static TValue GetValue<TEntity, TValue>(this PatchObject<TEntity> patch, Expression<Func<TEntity, TValue>> propertyGetter)
+            where TEntity: class
         {
-            if (dictionary.ContainsKey(key))
-            {
-                dictionary.Remove(key);
-            }
+            var propName = ExpressionHelper.ExtractPropertyName(propertyGetter);
 
-            dictionary.Add(key, value);
+            return (TValue)patch[propName];
         }
     }
 }

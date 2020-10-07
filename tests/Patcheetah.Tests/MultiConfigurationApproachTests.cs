@@ -3,50 +3,48 @@ using Patcheetah.Exceptions;
 using Patcheetah.Tests.Models.WithAttributes;
 using NUnit.Framework;
 using Patcheetah.Mapping;
+using Patcheetah.Configuration;
 
 namespace Patcheetah.Tests
 {
-    public class MultiConfigurationApproachTests : TestBase<User>
+    public abstract class MultiConfigurationApproachTests : TestBase<User>
     {
         private bool _flag = false;
 
-        protected override void Setup()
+        protected void Configure(PatcheetahConfig config)
         {
-            PatchEngine.Setup(cfg =>
-            {
-                cfg.EnableNestedPatching();
-                cfg.EnableAttributes();
-                cfg
-                    .ConfigureEntity<User>()
-                    .BeforeMapping(x => x.Age, args =>
+            config.EnableNestedPatching();
+            config.EnableAttributes();
+            config
+                .ConfigureEntity<User>()
+                .BeforeMapping(x => x.Age, args =>
+                {
+                    if (args.NewValue is int age && age == 0)
                     {
-                        if (args.NewValue is int age && age == 0)
-                        {
-                            return 18;
-                        }
+                        return 18;
+                    }
 
-                        return args.NewValue;
-                    })
-                    .AfterPatch(x => x.Id, x =>
+                    return args.NewValue;
+                })
+                .AfterPatch(x => x.Id, x =>
+                {
+                    if (x.OldValue?.ToString() == "trigger")
                     {
-                        if (x.OldValue?.ToString() == "trigger")
-                        {
-                            _flag = true;
-                        }
-                    })
-                    .UseMapping(x => x.Username, x =>
+                        _flag = true;
+                    }
+                })
+                .UseMapping(x => x.Username, x =>
+                {
+                    if (x == "convertme")
                     {
-                        if (x == "convertme")
-                        {
-                            return MappingResult.MapTo($"{x}_1");
-                        }
+                        return MappingResult.MapTo($"{x}_1");
+                    }
 
-                        return MappingResult.Skip(x);
-                    })
-                    // .Required(x => x.LastSeenFrom) -> we don't need this anymore. Instead of method setup, we'll install it from attribute
-                    // .IgnoreOnPatching(x => x.Username) -> Same situation, let's install it from attribute
-                    .SetKey(x => x.Username); // Set login as key but replace it by id from attributes
-            });
+                    return MappingResult.Skip(x);
+                })
+                // .Required(x => x.LastSeenFrom) -> we don't need this anymore. Instead of method setup, we'll install it from attribute
+                // .IgnoreOnPatching(x => x.Username) -> Same situation, let's install it from attribute
+                .SetKey(x => x.Username); // Set login as key but replace it by id from attributes
         }
 
         [Test]
@@ -60,11 +58,11 @@ namespace Patcheetah.Tests
                 Age = 12
             };
 
-            request["Age"] = (int)0;
+            request["Age"] = 0;
             var nick = "convertme";
             request["Username"] = nick;
 
-            request.Patch(model);
+            request.ApplyTo(model);
 
             Assert.AreEqual(18, model.Age);
             Assert.IsTrue(_flag);
@@ -85,7 +83,7 @@ namespace Patcheetah.Tests
                 }
             };
 
-            request.Patch(model);
+            request.ApplyTo(model);
 
             Assert.AreEqual("Savelyev", model.PersonalInfo.LastName);
             Assert.AreEqual(new System.DateTime(1990, 7, 15), model.PersonalInfo.Birthday);
@@ -102,7 +100,7 @@ namespace Patcheetah.Tests
             var model = new User();
             var requiredException = Assert.Throws<RequiredPropertiesMissedException>(() =>
             {
-                var newModel = request.CreateEntity();
+                var newModel = request.CreateNewEntity();
             });
 
             Assert.AreEqual("LastSeenFrom", requiredException.Properties.First());
@@ -116,7 +114,7 @@ namespace Patcheetah.Tests
 
             Assert.AreNotEqual(modelLogin, requestLogin);
 
-            request.Patch(model);
+            request.ApplyTo(model);
 
             Assert.AreEqual(modelLogin, model.Login);
 

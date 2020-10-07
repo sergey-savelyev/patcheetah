@@ -18,7 +18,7 @@ namespace Patcheetah.Configuration
         public EntityConfigurator<TEntity> UseMapping<TReturn>(Expression<Func<TEntity, TReturn>> property, Func<TReturn, MappingResultTypedWrapper<TReturn>> mappingHandler)
         {
             var handler = new MappingHandler(obj => mappingHandler((TReturn)obj));
-            var propName = ExtractPropertyName(property);
+            var propName = ExpressionHelper.ExtractPropertyName(property);
 
             _config.CreateAndGetPropertyConfiguration(propName).MappingHandler = handler;
 
@@ -27,7 +27,7 @@ namespace Patcheetah.Configuration
 
         public EntityConfigurator<TEntity> IgnoreOnPatching<TReturn>(Expression<Func<TEntity, TReturn>> property)
         {
-            var propName = ExtractPropertyName(property);
+            var propName = ExpressionHelper.ExtractPropertyName(property);
             _config.IgnoreOnPatching(propName);
 
             return this;
@@ -35,7 +35,7 @@ namespace Patcheetah.Configuration
 
         public EntityConfigurator<TEntity> UseJsonAlias<TReturn>(Expression<Func<TEntity, TReturn>> property, string alias)
         {
-            var propName = ExtractPropertyName(property);
+            var propName = ExpressionHelper.ExtractPropertyName(property);
             _config.UseJsonAlias(propName, alias);
 
             return this;
@@ -43,7 +43,7 @@ namespace Patcheetah.Configuration
 
         public EntityConfigurator<TEntity> Required<TReturn>(Expression<Func<TEntity, TReturn>> property)
         {
-            var propName = ExtractPropertyName(property);
+            var propName = ExpressionHelper.ExtractPropertyName(property);
             _config.Required(propName);
 
             return this;
@@ -53,7 +53,7 @@ namespace Patcheetah.Configuration
             Expression<Func<TEntity, TReturn>> property,
             Func<PropertyChangedEventArgs, object> callback)
         {
-            var propName = ExtractPropertyName(property);
+            var propName = ExpressionHelper.ExtractPropertyName(property);
             _config.CreateAndGetPropertyConfiguration(propName).BeforeMappingCallback = callback;
 
             return this;
@@ -63,7 +63,7 @@ namespace Patcheetah.Configuration
             Expression<Func<TEntity, TReturn>> property,
             Action<PropertyChangedEventArgs> callback)
         {
-            var propName = ExtractPropertyName(property);
+            var propName = ExpressionHelper.ExtractPropertyName(property);
             _config.CreateAndGetPropertyConfiguration(propName).AfterSetCallback = callback;
 
             return this;
@@ -71,27 +71,17 @@ namespace Patcheetah.Configuration
 
         public Dictionary<string, object> GetExtraSettingsForProperty<TReturn>(Expression<Func<TEntity, TReturn>> property)
         {
-            var propName = ExtractPropertyName(property);
+            var propName = ExpressionHelper.ExtractPropertyName(property);
 
             return _config.CreateAndGetPropertyConfiguration(propName).ExtraSettings;
         }
 
         public EntityConfigurator<TEntity> SetKey<TReturn>(Expression<Func<TEntity, TReturn>> keyPproperty, bool checkOnPatching = false)
         {
-            var propName = ExtractPropertyName(keyPproperty);
+            var propName = ExpressionHelper.ExtractPropertyName(keyPproperty);
             _config.SetKey(propName, checkOnPatching);
 
             return this;
-        }
-
-        private string ExtractPropertyName<TReturn>(Expression<Func<TEntity, TReturn>> property)
-        {
-            if (!(property.Body is MemberExpression memberExpression))
-            {
-                throw new ArgumentException("Only properties can be patched", property.Name);
-            }
-
-            return memberExpression.Member.Name;
         }
     }
 }

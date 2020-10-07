@@ -22,7 +22,7 @@ namespace Patcheetah.Tests
             _originalJToken = new JObject
             {
                 { "Id", GeneratedId },
-                { "Age", new JValue((int)26) },
+                { "Age", 26 },
                 { "Username", "Patcherman" },
                 { "Login", "Patcherman" },
                 { "LastSeenFrom", "Nokia 3310" },

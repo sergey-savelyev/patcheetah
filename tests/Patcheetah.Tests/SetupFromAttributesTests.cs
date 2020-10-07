@@ -1,18 +1,14 @@
 ﻿using Patcheetah.Tests.Models.WithAttributes;
 using NUnit.Framework;
+using Patcheetah.Configuration;
 
 namespace Patcheetah.Tests
 {
-    public class SetupFromAttributesTests : TestBase<User>
+    public abstract class SetupFromAttributesTests : TestBase<User>
     {
-        protected override void Setup()
+        protected void Configure(PatcheetahConfig config)
         {
-            // We don't need to setup, cause we use models setted up by attributes
-            // All that we need is just to enable it
-            PatchEngine.Setup(cfg =>
-            {
-                cfg.EnableAttributes();
-            });
+            config.EnableAttributes();
         }
 
         [Test]

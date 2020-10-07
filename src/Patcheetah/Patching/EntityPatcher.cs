@@ -1,5 +1,4 @@
-﻿using Newtonsoft.Json.Linq;
-using Patcheetah.Configuration;
+﻿using Patcheetah.Configuration;
 using Patcheetah.Exceptions;
 using System;
 using System.Collections.Generic;
@@ -10,6 +9,13 @@ namespace Patcheetah.Patching
 {
     public sealed class EntityPatcher
     {
+        private readonly IJsonTypesResolver _jsonTypesResolver;
+
+        public EntityPatcher(IJsonTypesResolver jsonTypesResolver)
+        {
+            _jsonTypesResolver = jsonTypesResolver;
+        }
+
         public TEntity BuildNew<TEntity>(IDictionary<string, object> patchData, EntityConfig config)
             where TEntity: class
         {
@@ -24,7 +30,7 @@ namespace Patcheetah.Patching
             BuildEntity(patchData, typeof(TEntity), config, model);
         }
 
-        public static object BuildEntity(IDictionary<string, object> data, Type type, EntityConfig config, object entityToPatch = null)
+        public object BuildEntity(IDictionary<string, object> data, Type type, EntityConfig config, object entityToPatch = null)
         {
             var properties = type.GetProperties();
 
@@ -75,7 +81,7 @@ namespace Patcheetah.Patching
             return entityToPatch;
         }
 
-        private static void ProcessProperty(PropertyInfo property, object entityToPatch, IDictionary<string, object> patchData)
+        private void ProcessProperty(PropertyInfo property, object entityToPatch, IDictionary<string, object> patchData)
         {
             if (!patchData.ContainsKey(property.Name))
             {
@@ -86,12 +92,12 @@ namespace Patcheetah.Patching
             var newValue = patchData[property.Name];
 
             newValue = PatchNested(newValue, oldValue, property);
-            newValue = ResolveType(newValue, property);
+            newValue = _jsonTypesResolver.ResolveType(newValue, property.PropertyType);
 
             property.SetValue(entityToPatch, newValue);
         }
 
-        private static void ProcessProperty(PropertyInfo property, object entityToPatch, IDictionary<string, object> patchData, EntityConfig config, bool entityBuiltFromScratch)
+        private void ProcessProperty(PropertyInfo property, object entityToPatch, IDictionary<string, object> patchData, EntityConfig config, bool entityBuiltFromScratch)
         {
             var propertyConfig = config[property.Name];
             var propertyName = propertyConfig?.Name ?? property.Name;
@@ -152,7 +158,7 @@ namespace Patcheetah.Patching
             }
 
             newValue = PatchNested(newValue, oldValue, property);
-            newValue = ResolveType(newValue, property);
+            newValue = _jsonTypesResolver.ResolveType(newValue, property.PropertyType);
             newValue = MapValue(newValue, property.PropertyType, propertyConfig);
 
             property.SetValue(entityToPatch, newValue);
@@ -169,12 +175,12 @@ namespace Patcheetah.Patching
             }
         }
 
-        private static object PatchNested(object newValue, object oldValue, PropertyInfo property)
+        private object PatchNested(object newValue, object oldValue, PropertyInfo property)
         {
-            if (newValue is JObject newValueJobject && PatchEngine.Config.RFC7396Enabled)
+            if (_jsonTypesResolver.IsObject(newValue) && PatchEngineCore.Config.RFC7396Enabled)
             {
-                var nestedConfig = PatchEngine.Config.GetEntityConfig(property.PropertyType);
-                var nestedPatchData = newValueJobject.ToObject<Dictionary<string, object>>();
+                var nestedConfig = PatchEngineCore.Config.GetEntityConfig(property.PropertyType);
+                var nestedPatchData = _jsonTypesResolver.ResolveType<Dictionary<string, object>>(newValue);
                 var caseInsensitiveNestedPatchData = new Dictionary<string, object>(nestedPatchData, StringComparer.OrdinalIgnoreCase);
                 newValue = BuildEntity(caseInsensitiveNestedPatchData, property.PropertyType, nestedConfig, oldValue);
             }
@@ -182,25 +188,10 @@ namespace Patcheetah.Patching
             return newValue;
         }
 
-        private static object ResolveType(object value, PropertyInfo property)
-        {
-            if (value is JObject newValueJobject)
-            {
-                value = newValueJobject.ToObject(property.PropertyType);
-            }
-
-            if (value is JArray newValueJArray)
-            {
-                value = newValueJArray.ToObject(property.PropertyType);
-            }
-
-            return value;
-        }
-
         private static object MapValue(object value, Type valueType, PropertyConfiguration configuration)
         {
-            var globalHandler = PatchEngine.Config.GlobalMappingHandler;
-            var typeHandler = PatchEngine.Config.GetMappingHandlerForType(valueType);
+            var globalHandler = PatchEngineCore.Config.GlobalMappingHandler;
+            var typeHandler = PatchEngineCore.Config.GetMappingHandlerForType(valueType);
             var propertyHandler = configuration.MappingHandler;
 
             if (globalHandler != null)

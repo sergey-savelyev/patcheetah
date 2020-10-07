@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json.Linq;
 using NUnit.Framework;
+using Patcheetah.JsonNET;
 using Patcheetah.Patching;
 using Patcheetah.Tests.Models.RFC7396;
 using System.Linq;
@@ -11,8 +12,8 @@ namespace Patcheetah.Tests
         [Test]
         public void RFC7396PatchingEnabledTest()
         {
-            PatchEngine.Reset();
-            PatchEngine.Setup(cfg =>
+            PatchEngineCore.Reset();
+            PatchEngine.Init(cfg =>
             {
                 cfg.EnableNestedPatching();
             });
@@ -39,7 +40,7 @@ namespace Patcheetah.Tests
                                }";
 
             var patchObject = JObject.Parse(jsonPatch).ToObject<PatchObject<Post>>();
-            patchObject.Patch(model);
+            patchObject.ApplyTo(model);
 
             Assert.AreEqual("+01-123-456-7890", model.PhoneNumber);
             Assert.IsNull(model.Author.FamilyName);
@@ -51,7 +52,8 @@ namespace Patcheetah.Tests
         [Test]
         public void RFC7396PatchingDisabledTest()
         {
-            PatchEngine.Reset();
+            PatchEngineCore.Reset();
+            PatchEngine.Init();
 
             var model = new Post
             {
@@ -75,7 +77,7 @@ namespace Patcheetah.Tests
                                }";
 
             var patchObject = JObject.Parse(jsonPatch).ToObject<PatchObject<Post>>();
-            patchObject.Patch(model);
+            patchObject.ApplyTo(model);
 
             Assert.AreEqual("+01-123-456-7890", model.PhoneNumber);
             Assert.IsNull(model.Author.FamilyName);

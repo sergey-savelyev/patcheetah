@@ -9,7 +9,7 @@ namespace Patcheetah.Tests.Models.Standard
     {
         public string Id { get; set; }
 
-        public long Age { get; set; }
+        public int Age { get; set; }
 
         public string Username { get; set; }
 
