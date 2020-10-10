@@ -6,6 +6,6 @@ namespace Patcheetah.Configuration
 {
     public interface ICustomAttributesConfigurator
     {
-        void Configure(PropertyInfo property, IEnumerable<Attribute> propertyAttributes, EntityConfig config);
+        void Configure(PropertyInfo property, IEnumerable<Attribute> propertyAttributes, EntityConfigAccessor configAccessor);
     }
 }

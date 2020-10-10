@@ -2,6 +2,7 @@
 using Patcheetah.Exceptions;
 using Patcheetah.Patching;
 using System;
+using System.Linq;
 
 namespace Patcheetah
 {
@@ -24,7 +25,7 @@ namespace Patcheetah
             _patcher = patcher;
         }
 
-        public static void Reset()
+        public static void Cleanup()
         {
             _config?.Cleanup();
         }

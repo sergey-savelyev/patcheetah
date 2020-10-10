@@ -9,30 +9,21 @@ namespace Patcheetah.Tests
 {
     public abstract class MultiConfigurationApproachTests : TestBase<User>
     {
-        private bool _flag = false;
-
         protected void Configure(PatcheetahConfig config)
         {
             config.EnableNestedPatching();
             config.EnableAttributes();
+            config.SetPrePatchProcessingFunction((oldVal, newVal, entityToPatch, config) =>
+            {
+                if (newVal is int age && age == 0)
+                {
+                    return 18;
+                }
+
+                return newVal;
+            });
             config
                 .ConfigureEntity<User>()
-                .BeforeMapping(x => x.Age, args =>
-                {
-                    if (args.NewValue is int age && age == 0)
-                    {
-                        return 18;
-                    }
-
-                    return args.NewValue;
-                })
-                .AfterPatch(x => x.Id, x =>
-                {
-                    if (x.OldValue?.ToString() == "trigger")
-                    {
-                        _flag = true;
-                    }
-                })
                 .UseMapping(x => x.Username, x =>
                 {
                     if (x == "convertme")
@@ -54,7 +45,6 @@ namespace Patcheetah.Tests
             var model = new User
             {
                 Username = "qwerty",
-                Id = "trigger",
                 Age = 12
             };
 
@@ -65,7 +55,6 @@ namespace Patcheetah.Tests
             request.ApplyTo(model);
 
             Assert.AreEqual(18, model.Age);
-            Assert.IsTrue(_flag);
             Assert.AreEqual($"{nick}_1", model.Username);
         }
 

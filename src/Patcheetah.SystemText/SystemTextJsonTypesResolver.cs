@@ -37,30 +37,33 @@ namespace Patcheetah.SystemText
 
         public virtual object ResolveType(object value, Type type)
         {
-            if (value is JsonElement jsonElement)
+            if (!(value is JsonElement jsonElement))
             {
-                switch (jsonElement.ValueKind)
-                {
-                    case JsonValueKind.Null:
-                    case JsonValueKind.Undefined:
-                        return null;
-                    case JsonValueKind.Array:
-                    case JsonValueKind.Object:
-                        return jsonElement.ToObject(type, _serializerOptions);
-                    case JsonValueKind.False:
-                        return false;
-                    case JsonValueKind.True:
-                        return true;
-                    case JsonValueKind.Number:
-                        return jsonElement.GetInt32();
-                    case JsonValueKind.String:
-                        return jsonElement.GetString();
-                    default:
-                        return value;
-                }
+                return value;
             }
 
-            return value;
+            switch (jsonElement.ValueKind)
+            {
+                case JsonValueKind.Null:
+                case JsonValueKind.Undefined:
+                    return null;
+                case JsonValueKind.Array:
+                case JsonValueKind.Object:
+                    return jsonElement.ToObject(type, _serializerOptions);
+                case JsonValueKind.False:
+                    return false;
+                case JsonValueKind.True:
+                    return true;
+                case JsonValueKind.Number:
+                    return jsonElement.ToObject(type);
+                case JsonValueKind.String:
+                    if (type.IsEnum)
+                        return Enum.Parse(type, jsonElement.GetString());
+                    return jsonElement.GetString();
+                default:
+                    return value;
+            }
+
         }
 
         public T ResolveType<T>(object value)

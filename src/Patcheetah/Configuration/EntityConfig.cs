@@ -32,7 +32,7 @@ namespace Patcheetah.Configuration
 
         public List<PropertyConfiguration> ConfiguredProperties => _configuredProperties.Select(x => x.Value).ToList();
 
-        public PropertyConfiguration this[string propName]
+        internal PropertyConfiguration this[string propName]
         {
             get
             {
@@ -56,28 +56,28 @@ namespace Patcheetah.Configuration
 
         public void IgnoreOnPatching(string propName)
         {
-            CreateAndGetPropertyConfiguration(propName).Ignored = true;
+            GetOrCreatePropertyConfiguration(propName).Ignored = true;
         }
 
         public void UseJsonAlias(string propName, string alias)
         {
-            CreateAndGetPropertyConfiguration(propName).Name = alias;
+            GetOrCreatePropertyConfiguration(propName).Name = alias;
         }
 
         public void Required(string propName)
         {
-            CreateAndGetPropertyConfiguration(propName).Required = true;
+            GetOrCreatePropertyConfiguration(propName).Required = true;
         }
 
         public void SetKey(string keyProperty, bool checkOnPatching = false)
         {
             if (!string.IsNullOrEmpty(KeyPropertyName))
             {
-                CreateAndGetPropertyConfiguration(KeyPropertyName).IsKey = false;
+                GetOrCreatePropertyConfiguration(KeyPropertyName).IsKey = false;
             }
 
             CheckKeyOnPatching = checkOnPatching;
-            CreateAndGetPropertyConfiguration(keyProperty).IsKey = true;
+            GetOrCreatePropertyConfiguration(keyProperty).IsKey = true;
         }
 
         internal void SetCaseSensitive(bool caseSensitive)
@@ -93,12 +93,12 @@ namespace Patcheetah.Configuration
             CaseSensitive = caseSensitive;
         }
 
-        public IEnumerator<PropertyConfiguration> GetEnumerator()
+        internal IEnumerator<PropertyConfiguration> GetEnumerator()
         {
             return _configuredProperties.Select(x => x.Value).GetEnumerator();
         }
 
-        internal PropertyConfiguration CreateAndGetPropertyConfiguration(string propertyName)
+        internal PropertyConfiguration GetOrCreatePropertyConfiguration(string propertyName)
         {
             if (!_configuredProperties.ContainsKey(propertyName))
             {

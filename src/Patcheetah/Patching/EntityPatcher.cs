@@ -33,30 +33,6 @@ namespace Patcheetah.Patching
         public object BuildEntity(IDictionary<string, object> data, Type type, EntityConfig config, object entityToPatch = null)
         {
             var properties = type.GetProperties();
-
-            // If config is null, we gonna use simple patching
-            if (config == null)
-            {
-                foreach (var property in properties)
-                {
-                    ProcessProperty(property, entityToPatch, data);
-                }
-
-                return entityToPatch;
-            }
-
-            var configuredProperties = config.ConfiguredProperties;
-            var missedRequiredPropertyNames = configuredProperties
-                .Where(x => x.Required)
-                .Select(x => x.Name)
-                .Except(data.Keys)
-                .ToArray();
-
-            if (missedRequiredPropertyNames.Any())
-            {
-                throw new RequiredPropertiesMissedException(missedRequiredPropertyNames);
-            }
-
             var newEntityCreated = false;
 
             if (entityToPatch == null)
@@ -65,7 +41,16 @@ namespace Patcheetah.Patching
                 entityToPatch = Activator.CreateInstance(type);
             }
 
-            if (!newEntityCreated)
+            var configuredProperties = config?.ConfiguredProperties;
+            var missedRequiredPropertyConfigs = configuredProperties?
+                .Where(x => x.Required && !data.Keys.Contains(x.Name, StringComparer.OrdinalIgnoreCase));
+
+            if (missedRequiredPropertyConfigs?.Any() ?? false)
+            {
+                throw new RequiredPropertiesMissedException(missedRequiredPropertyConfigs.Select(x => x.Name).ToArray());
+            }
+
+            if (!newEntityCreated && configuredProperties != null)
             {
                 foreach (var ignored in configuredProperties.Where(x => x.Ignored).Select(x => x.Name))
                 {
@@ -81,25 +66,9 @@ namespace Patcheetah.Patching
             return entityToPatch;
         }
 
-        private void ProcessProperty(PropertyInfo property, object entityToPatch, IDictionary<string, object> patchData)
-        {
-            if (!patchData.ContainsKey(property.Name))
-            {
-                return;
-            }
-
-            var oldValue = property.GetValue(entityToPatch);
-            var newValue = patchData[property.Name];
-
-            newValue = PatchNested(newValue, oldValue, property);
-            newValue = _jsonTypesResolver.ResolveType(newValue, property.PropertyType);
-
-            property.SetValue(entityToPatch, newValue);
-        }
-
         private void ProcessProperty(PropertyInfo property, object entityToPatch, IDictionary<string, object> patchData, EntityConfig config, bool entityBuiltFromScratch)
         {
-            var propertyConfig = config[property.Name];
+            var propertyConfig = config?[property.Name];
             var propertyName = propertyConfig?.Name ?? property.Name;
 
             if (!patchData.ContainsKey(propertyName))
@@ -108,14 +77,33 @@ namespace Patcheetah.Patching
             }
 
             var newValue = patchData[propertyName];
+            var isObject = _jsonTypesResolver.IsObject(newValue);
             var oldValue = property.GetValue(entityToPatch);
+
+            if (!entityBuiltFromScratch)
+            {
+                var prePatchFunc = PatchEngineCore.Config.PrePatchProcessingFunc;
+
+                if (prePatchFunc != null && (!PatchEngineCore.Config.RFC7396Enabled || !isObject))
+                {
+                    newValue = _jsonTypesResolver.ResolveType(newValue, property.PropertyType);
+                    newValue = prePatchFunc(oldValue, newValue, entityToPatch, propertyConfig);
+                }
+            }
 
             if (propertyConfig == null)
             {
-                property.SetValue(entityToPatch, newValue);
+                if (isObject && PatchEngineCore.Config.RFC7396Enabled)
+                {
+                    newValue = PatchNested(newValue, oldValue, property);
+                }
+
+                TrySet(newValue, entityToPatch, property);
+
                 return;
             }
 
+            // key check
             if (config.KeyPropertyName == propertyName && config.CheckKeyOnPatching)
             {
                 if (!typeof(IComparable).IsAssignableFrom(property.PropertyType))
@@ -132,6 +120,7 @@ namespace Patcheetah.Patching
                 }
             }
 
+            // null value handling
             if (newValue == null)
             {
                 object defaultValue = null;
@@ -146,44 +135,36 @@ namespace Patcheetah.Patching
                 return;
             }
 
-            if (!entityBuiltFromScratch && propertyConfig.BeforeMappingCallback != null)
+            if (isObject && PatchEngineCore.Config.RFC7396Enabled)
             {
-                newValue = propertyConfig.BeforeMappingCallback.Invoke(new PropertyChangedEventArgs
-                {
-                    Entity = entityToPatch,
-                    OldValue = oldValue,
-                    NewValue = newValue,
-                    PropertyConfiguration = propertyConfig
-                });
+                newValue = PatchNested(newValue, oldValue, property);
             }
 
-            newValue = PatchNested(newValue, oldValue, property);
             newValue = _jsonTypesResolver.ResolveType(newValue, property.PropertyType);
             newValue = MapValue(newValue, property.PropertyType, propertyConfig);
+            TrySet(newValue, entityToPatch, property, false);
+        }
 
-            property.SetValue(entityToPatch, newValue);
-
-            if (!entityBuiltFromScratch)
+        private void TrySet(object newValue, object entityToPatch, PropertyInfo property, bool resolveType = true)
+        {
+            try
             {
-                propertyConfig.AfterSetCallback?.Invoke(new PropertyChangedEventArgs
-                {
-                    Entity = entityToPatch,
-                    OldValue = oldValue,
-                    NewValue = newValue,
-                    PropertyConfiguration = propertyConfig
-                });
+                newValue = _jsonTypesResolver.ResolveType(newValue, property.PropertyType);
+                property.SetValue(entityToPatch, newValue);
+            }
+            catch (ArgumentException ex)
+            {
+                throw new TypeMissmatchException(newValue.GetType().Name, property.PropertyType.Name, property.Name, ex);
             }
         }
 
         private object PatchNested(object newValue, object oldValue, PropertyInfo property)
         {
-            if (_jsonTypesResolver.IsObject(newValue) && PatchEngineCore.Config.RFC7396Enabled)
-            {
-                var nestedConfig = PatchEngineCore.Config.GetEntityConfig(property.PropertyType);
-                var nestedPatchData = _jsonTypesResolver.ResolveType<Dictionary<string, object>>(newValue);
-                var caseInsensitiveNestedPatchData = new Dictionary<string, object>(nestedPatchData, StringComparer.OrdinalIgnoreCase);
-                newValue = BuildEntity(caseInsensitiveNestedPatchData, property.PropertyType, nestedConfig, oldValue);
-            }
+            var nestedConfig = PatchEngineCore.Config.GetEntityConfig(property.PropertyType);
+            var nestedPatchData = _jsonTypesResolver.ResolveType<Dictionary<string, object>>(newValue);
+
+            var caseInsensitiveNestedPatchData = new Dictionary<string, object>(nestedPatchData, StringComparer.OrdinalIgnoreCase);
+            newValue = BuildEntity(caseInsensitiveNestedPatchData, property.PropertyType, nestedConfig, oldValue);
 
             return newValue;
         }

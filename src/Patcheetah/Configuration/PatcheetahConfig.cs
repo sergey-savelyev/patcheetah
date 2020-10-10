@@ -17,6 +17,8 @@ namespace Patcheetah.Configuration
 
         internal MappingHandler GlobalMappingHandler { get; private set; }
 
+        internal Func<object, object, object, PropertyConfiguration, object> PrePatchProcessingFunc { get; private set; }
+
         internal bool RFC7396Enabled { get; private set; }
 
         internal bool GlobalCaseSensitivity { get; private set; }
@@ -66,6 +68,11 @@ namespace Patcheetah.Configuration
         public void SetGlobalMapping(Func<object, MappingResult> mapHandler)
         {
             GlobalMappingHandler = new MappingHandler(obj => mapHandler(obj));
+        }
+
+        public void SetPrePatchProcessingFunction(Func<object, object, object, PropertyConfiguration, object> prePatchProcessingFunction)
+        {
+            PrePatchProcessingFunc = prePatchProcessingFunction;
         }
 
         public void SetCustomAttributesConfigurator(ICustomAttributesConfigurator configurator)
@@ -168,17 +175,17 @@ namespace Patcheetah.Configuration
                 {
                     if (attribute is JsonAliasAttribute aliasAttribute)
                     {
-                        entityConfig.CreateAndGetPropertyConfiguration(property.Name).Name = aliasAttribute.Alias;
+                        entityConfig.GetOrCreatePropertyConfiguration(property.Name).Name = aliasAttribute.Alias;
                     }
 
                     if (attribute is IgnoreOnPatchingAttribute)
                     {
-                        entityConfig.CreateAndGetPropertyConfiguration(property.Name).Ignored = true;
+                        entityConfig.GetOrCreatePropertyConfiguration(property.Name).Ignored = true;
                     }
 
                     if (attribute is RequiredOnPatchingAttribute)
                     {
-                        entityConfig.CreateAndGetPropertyConfiguration(property.Name).Required = true;
+                        entityConfig.GetOrCreatePropertyConfiguration(property.Name).Required = true;
                     }
 
                     if (attribute is PatchingKeyAttribute keyPropertyAttribute)
@@ -193,7 +200,7 @@ namespace Patcheetah.Configuration
                     }
                 }
 
-                _customAttributesConfigurator?.Configure(property, attributes, entityConfig);
+                _customAttributesConfigurator?.Configure(property, attributes, new EntityConfigAccessor(entityConfig));
             }
 
             return entityConfig;

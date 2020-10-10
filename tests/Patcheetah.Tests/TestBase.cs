@@ -19,9 +19,20 @@ namespace Patcheetah.Tests
         [OneTimeSetUp]
         public void SetupInternal()
         {
-            PatchEngineCore.Reset();
+            PatchEngineCore.Cleanup();
             _patchRequestProvider = GetRequestProvider();
             Setup();
+        }
+
+        [Test]
+        public void EntityCreationTest()
+        {
+            var newId = Guid.NewGuid().ToString();
+            var request = GetPatchRequestWithFields("Login", "LastSeenFrom");
+            var entity = request.CreateNewEntity(newId);
+
+            Assert.NotNull(entity);
+            Assert.AreEqual(newId, entity.Id);
         }
 
         [Test]
@@ -63,18 +74,14 @@ namespace Patcheetah.Tests
         public void WrongTypeTest()
         {
             var request = GetPatchRequestWithFields("LastSeenFrom", "AccessRights");
-            request["AccessRights"] = new JArray
-            {
-                JObject.FromObject(new { Foo = "foo" }),
-                JObject.FromObject(new { Bar = "bar" }),
-            };
+            request["AccessRights"] = "wrongtype!";
 
             var model = new TUser
             {
                 AccessRights = new[] { "Full" }
             };
 
-            var exception = Assert.Throws<ArgumentException>(() =>
+            var exception = Assert.Throws<TypeMissmatchException>(() =>
             {
                 request.ApplyTo(model);
             });

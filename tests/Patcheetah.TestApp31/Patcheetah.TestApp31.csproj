@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Swashbuckle.AspNetCore.SwaggerGen" Version="5.6.3" />
+    <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="5.6.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Patcheetah.Swagger.NET31\Patcheetah.Swagger.NET31.csproj" />
+    <ProjectReference Include="..\..\src\Patcheetah.SystemText\Patcheetah.SystemText.csproj" />
+  </ItemGroup>
+
+
+</Project>

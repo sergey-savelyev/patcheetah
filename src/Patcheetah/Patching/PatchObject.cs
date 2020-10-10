@@ -6,7 +6,7 @@ using Patcheetah.Configuration;
 
 namespace Patcheetah.Patching
 {
-    public class PatchObject<TEntity> : IDictionary<string, object>, IPatchObject
+    public class PatchObject<TEntity> : IDictionary<string, object>
         where TEntity : class
     {
         private readonly Dictionary<string, object> _patchProperties;
@@ -24,11 +24,8 @@ namespace Patcheetah.Patching
         public ICollection<string> Keys => _patchProperties.Keys;
         public ICollection<object> Values => _patchProperties.Values;
 
-        public Type EntityType { get; private set; }
-
         public PatchObject()
         {
-            EntityType = typeof(TEntity);
             _entityConfig = PatchEngineCore.Config.GetConfig<TEntity>();
             _patchProperties = new Dictionary<string, object>(_entityConfig?.CaseSensitive ?? PatchEngineCore.Config.GlobalCaseSensitivity ?
                 StringComparer.Ordinal :
@@ -42,6 +39,16 @@ namespace Patcheetah.Patching
 
         public TEntity CreateNewEntity()
         {
+            return PatchEngineCore.Patcher.BuildNew<TEntity>(_patchProperties, _entityConfig);
+        }
+
+        public TEntity CreateNewEntity(object valueOfKeyProperty)
+        {
+            if (!string.IsNullOrEmpty(_entityConfig?.KeyPropertyName))
+            {
+                _patchProperties.Add(_entityConfig.KeyPropertyName, valueOfKeyProperty);
+            }
+
             return PatchEngineCore.Patcher.BuildNew<TEntity>(_patchProperties, _entityConfig);
         }
 

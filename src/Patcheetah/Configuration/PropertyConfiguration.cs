@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using Patcheetah.Mapping;
-using Patcheetah.Patching;
 
 namespace Patcheetah.Configuration
 {
@@ -15,11 +14,7 @@ namespace Patcheetah.Configuration
 
         public bool Ignored { get; set; }
 
-        public MappingHandler MappingHandler { get; set; }
-
-        public Func<PropertyChangedEventArgs, object> BeforeMappingCallback { get; set; }
-
-        public Action<PropertyChangedEventArgs> AfterSetCallback { get; set; }
+        public Func<object, MappingResult> MappingHandler { get; set; }
 
         public Dictionary<string, object> ExtraSettings { get; set; } = new Dictionary<string, object>();
 

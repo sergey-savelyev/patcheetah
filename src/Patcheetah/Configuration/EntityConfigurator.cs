@@ -17,10 +17,8 @@ namespace Patcheetah.Configuration
 
         public EntityConfigurator<TEntity> UseMapping<TReturn>(Expression<Func<TEntity, TReturn>> property, Func<TReturn, MappingResultTypedWrapper<TReturn>> mappingHandler)
         {
-            var handler = new MappingHandler(obj => mappingHandler((TReturn)obj));
             var propName = ExpressionHelper.ExtractPropertyName(property);
-
-            _config.CreateAndGetPropertyConfiguration(propName).MappingHandler = handler;
+            _config.GetOrCreatePropertyConfiguration(propName).MappingHandler = obj => mappingHandler((TReturn)obj);
 
             return this;
         }
@@ -49,31 +47,11 @@ namespace Patcheetah.Configuration
             return this;
         }
 
-        public EntityConfigurator<TEntity> BeforeMapping<TReturn>(
-            Expression<Func<TEntity, TReturn>> property,
-            Func<PropertyChangedEventArgs, object> callback)
-        {
-            var propName = ExpressionHelper.ExtractPropertyName(property);
-            _config.CreateAndGetPropertyConfiguration(propName).BeforeMappingCallback = callback;
-
-            return this;
-        }
-
-        public EntityConfigurator<TEntity> AfterPatch<TReturn>(
-            Expression<Func<TEntity, TReturn>> property,
-            Action<PropertyChangedEventArgs> callback)
-        {
-            var propName = ExpressionHelper.ExtractPropertyName(property);
-            _config.CreateAndGetPropertyConfiguration(propName).AfterSetCallback = callback;
-
-            return this;
-        }
-
         public Dictionary<string, object> GetExtraSettingsForProperty<TReturn>(Expression<Func<TEntity, TReturn>> property)
         {
             var propName = ExpressionHelper.ExtractPropertyName(property);
 
-            return _config.CreateAndGetPropertyConfiguration(propName).ExtraSettings;
+            return _config.GetOrCreatePropertyConfiguration(propName).ExtraSettings;
         }
 
         public EntityConfigurator<TEntity> SetKey<TReturn>(Expression<Func<TEntity, TReturn>> keyPproperty, bool checkOnPatching = false)

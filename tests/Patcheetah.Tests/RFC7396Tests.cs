@@ -12,7 +12,7 @@ namespace Patcheetah.Tests
         [Test]
         public void RFC7396PatchingEnabledTest()
         {
-            PatchEngineCore.Reset();
+            PatchEngineCore.Cleanup();
             PatchEngine.Init(cfg =>
             {
                 cfg.EnableNestedPatching();
@@ -52,7 +52,7 @@ namespace Patcheetah.Tests
         [Test]
         public void RFC7396PatchingDisabledTest()
         {
-            PatchEngineCore.Reset();
+            PatchEngineCore.Cleanup();
             PatchEngine.Init();
 
             var model = new Post

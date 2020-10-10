@@ -34,6 +34,9 @@ namespace Patcheetah.JsonNET
                 case JTokenType.Guid:
                 case JTokenType.Uri:
                 case JTokenType.String:
+                    if (type.IsEnum)
+                        return Enum.Parse(type, jtoken.ToString());
+
                     return jtoken.ToString();
                 case JTokenType.Object:
                 case JTokenType.Array:
