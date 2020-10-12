@@ -3,9 +3,7 @@ using Patcheetah.Patching;
 using Patcheetah.SystemText;
 using Patcheetah.Tests.Customization;
 using System;
-using System.Collections.Generic;
 using System.Globalization;
-using System.Text;
 using System.Text.Json;
 
 namespace Patcheetah.Tests
@@ -19,21 +17,21 @@ namespace Patcheetah.Tests
                 config.EnableAttributes();
                 config.SetCustomAttributesConfigurator(new CustomAttributesConfigurator());
                 config
-                    .SetPrePatchProcessingFunction((oldVal, newVal, entity, propConfig) =>
+                    .SetPrePatchProcessingFunction(context =>
                     {
-                        if (propConfig.ExtraSettings.ContainsKey(RoundValueAttribute.PARAMETER_NAME))
+                        if (context.PropertyConfiguration.ExtraSettings.ContainsKey(RoundValueAttribute.PARAMETER_NAME))
                         {
-                            if (!(newVal is double))
+                            if (!(context.NewValue is double))
                             {
-                                return newVal;
+                                return context.NewValue;
                             }
 
-                            var precision = (int)propConfig.ExtraSettings[RoundValueAttribute.PARAMETER_NAME];
+                            var precision = (int)(context.PropertyConfiguration.ExtraSettings[RoundValueAttribute.PARAMETER_NAME]);
 
-                            return Math.Round((double)newVal, precision);
+                            return Math.Round((double)(context.NewValue), precision);
                         }
 
-                        return newVal;
+                        return context.NewValue;
                     });
             });
         }

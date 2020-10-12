@@ -39,9 +39,6 @@ namespace Patcheetah.Swagger.NET31
 				var toDel = schema.Properties.FirstOrDefault(x => x.Key.ToLower() == aliasProperty.Name.ToLower());
 				var val = toDel.Value;
 				var key = aliasProperty.GetCustomAttribute<JsonAliasAttribute>().Alias;
-				key = key.Length > 1 ?
-					char.ToLowerInvariant(key[0]) + key.Substring(1) :
-					char.ToLowerInvariant(key[0]).ToString();
 
 				schema.Properties.Remove(toDel);
 				schema.Properties.Add(key, val);
@@ -49,9 +46,7 @@ namespace Patcheetah.Swagger.NET31
 
 			foreach (var requiredProperty in requiredProperties)
 			{
-				var propName = requiredProperty.Name.Length > 1 ?
-					char.ToLowerInvariant(requiredProperty.Name[0]) + requiredProperty.Name.Substring(1) :
-					char.ToLowerInvariant(requiredProperty.Name[0]).ToString();
+				var propName = requiredProperty.Name;
 
 				if (aliasProperties.Contains(requiredProperty))
                 {
@@ -59,9 +54,6 @@ namespace Patcheetah.Swagger.NET31
 						.First(x => x.Name == requiredProperty.Name)
 						.GetCustomAttribute<JsonAliasAttribute>()
 						.Alias;
-					propName = alias.Length > 1 ?
-						char.ToLowerInvariant(alias[0]) + alias.Substring(1) :
-						char.ToLowerInvariant(alias[0]).ToString();
 				}
 
 				schema.Required.Add(propName);

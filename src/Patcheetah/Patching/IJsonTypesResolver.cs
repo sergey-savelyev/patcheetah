@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Reflection;
 
 namespace Patcheetah.Patching
 {
@@ -7,7 +6,7 @@ namespace Patcheetah.Patching
     {
         object ResolveType(object value, Type type);
 
-        T ResolveType<T>(object value);
+        T ResolveJsonType<T>(object value);
 
         bool IsArray(object value);
 

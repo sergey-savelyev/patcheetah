@@ -4,8 +4,9 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
-using Patcheetah.Swagger.NET31;
+using Patcheetah.Swagger;
 using Patcheetah.SystemText;
+using System;
 
 namespace Patcheetah.TestApp31
 {
@@ -36,7 +37,24 @@ namespace Patcheetah.TestApp31
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
-            PatchEngine.Init(cfg => cfg.EnableAttributes());
+            PatchEngine.Init(cfg =>
+            {
+                cfg.EnableAttributes();
+                cfg.SetPrePatchProcessingFunction(context =>
+                {
+                    if (context.NewValue is long lng)
+                    {
+                        return Convert.ToInt32(lng);
+                    }
+
+                    if (context.NewValue is string str && (context.OldValue?.GetType()?.IsEnum ?? false))
+                    {
+                        return Enum.Parse(context.OldValue.GetType(), str, true);
+                    }
+
+                    return context.NewValue;
+                });
+            });
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();

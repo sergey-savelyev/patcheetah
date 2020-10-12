@@ -35,7 +35,7 @@ namespace Patcheetah.JsonNET
                 case JTokenType.Uri:
                 case JTokenType.String:
                     if (type.IsEnum)
-                        return Enum.Parse(type, jtoken.ToString());
+                        return Enum.Parse(type, jtoken.ToString(), true);
 
                     return jtoken.ToString();
                 case JTokenType.Object:
@@ -54,7 +54,7 @@ namespace Patcheetah.JsonNET
             }
         }
 
-        public T ResolveType<T>(object value)
+        public T ResolveJsonType<T>(object value)
         {
             return (T)ResolveType(value, typeof(T));
         }

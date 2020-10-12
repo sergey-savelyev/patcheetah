@@ -7,25 +7,26 @@ using System.Reflection;
 
 namespace Patcheetah.Patching
 {
-    public sealed class EntityPatcher
+    public sealed class EntityPatcher<TEntity> 
+        where TEntity : class
     {
         private readonly IJsonTypesResolver _jsonTypesResolver;
+
+        public static EntityPatcher<TEntity> Create() => new EntityPatcher<TEntity>(PatchEngineCore.JsonTypesResolver);
 
         public EntityPatcher(IJsonTypesResolver jsonTypesResolver)
         {
             _jsonTypesResolver = jsonTypesResolver;
         }
 
-        public TEntity BuildNew<TEntity>(IDictionary<string, object> patchData, EntityConfig config)
-            where TEntity: class
+        public TEntity BuildNew(IDictionary<string, object> patchData, EntityConfig config)
         {
             var result = BuildEntity(patchData, typeof(TEntity), config);
 
             return result as TEntity;
         }
 
-        public void Patch<TEntity>(TEntity model, IDictionary<string, object> patchData, EntityConfig config)
-            where TEntity : class
+        public void Patch(TEntity model, IDictionary<string, object> patchData, EntityConfig config)
         {
             BuildEntity(patchData, typeof(TEntity), config, model);
         }
@@ -79,16 +80,18 @@ namespace Patcheetah.Patching
             var newValue = patchData[propertyName];
             var isObject = _jsonTypesResolver.IsObject(newValue);
             var oldValue = property.GetValue(entityToPatch);
+            var prePatchFunc = PatchEngineCore.Config.PrePatchProcessingFunc;
 
-            if (!entityBuiltFromScratch)
+            if (prePatchFunc != null && (!PatchEngineCore.Config.RFC7396Enabled || !isObject))
             {
-                var prePatchFunc = PatchEngineCore.Config.PrePatchProcessingFunc;
-
-                if (prePatchFunc != null && (!PatchEngineCore.Config.RFC7396Enabled || !isObject))
+                newValue = _jsonTypesResolver.ResolveType(newValue, property.PropertyType);
+                newValue = prePatchFunc(new PatchContext
                 {
-                    newValue = _jsonTypesResolver.ResolveType(newValue, property.PropertyType);
-                    newValue = prePatchFunc(oldValue, newValue, entityToPatch, propertyConfig);
-                }
+                    NewValue = newValue,
+                    OldValue = oldValue,
+                    Entity = entityToPatch,
+                    PropertyConfiguration = propertyConfig
+                });
             }
 
             if (propertyConfig == null)
@@ -165,7 +168,7 @@ namespace Patcheetah.Patching
         private object PatchNested(object newValue, object oldValue, PropertyInfo property)
         {
             var nestedConfig = PatchEngineCore.Config.GetEntityConfig(property.PropertyType);
-            var nestedPatchData = _jsonTypesResolver.ResolveType<Dictionary<string, object>>(newValue);
+            var nestedPatchData = _jsonTypesResolver.ResolveJsonType<Dictionary<string, object>>(newValue);
 
             var caseInsensitiveNestedPatchData = new Dictionary<string, object>(nestedPatchData, StringComparer.OrdinalIgnoreCase);
             newValue = BuildEntity(caseInsensitiveNestedPatchData, property.PropertyType, nestedConfig, oldValue);

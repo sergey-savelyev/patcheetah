@@ -15,14 +15,14 @@ namespace Patcheetah.Tests
         {
             config.EnableNestedPatching();
             config.EnableAttributes();
-            config.SetPrePatchProcessingFunction((oldVal, newVal, entityToPatch, config) =>
+            config.SetPrePatchProcessingFunction(context =>
             {
-                if (newVal is int age && age == 0)
+                if (context.NewValue is int age && age == 0)
                 {
                     return 18;
                 }
 
-                return newVal;
+                return context.NewValue;
             });
             config
                 .ConfigureEntity<User>()
@@ -139,7 +139,7 @@ namespace Patcheetah.Tests
 
             stopwatch.Stop();
 
-            Assert.Less(stopwatch.ElapsedMilliseconds, 100000);
+            Assert.Less(stopwatch.ElapsedMilliseconds, 20000);
         }
     }
 }

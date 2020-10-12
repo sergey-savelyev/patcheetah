@@ -5,6 +5,7 @@ using System.Reflection;
 using Patcheetah.Attributes;
 using Patcheetah.Exceptions;
 using Patcheetah.Mapping;
+using Patcheetah.Patching;
 
 namespace Patcheetah.Configuration
 {
@@ -17,7 +18,7 @@ namespace Patcheetah.Configuration
 
         internal MappingHandler GlobalMappingHandler { get; private set; }
 
-        internal Func<object, object, object, PropertyConfiguration, object> PrePatchProcessingFunc { get; private set; }
+        internal Func<PatchContext, object> PrePatchProcessingFunc { get; private set; }
 
         internal bool RFC7396Enabled { get; private set; }
 
@@ -70,7 +71,7 @@ namespace Patcheetah.Configuration
             GlobalMappingHandler = new MappingHandler(obj => mapHandler(obj));
         }
 
-        public void SetPrePatchProcessingFunction(Func<object, object, object, PropertyConfiguration, object> prePatchProcessingFunction)
+        public void SetPrePatchProcessingFunction(Func<PatchContext, object> prePatchProcessingFunction)
         {
             PrePatchProcessingFunc = prePatchProcessingFunction;
         }

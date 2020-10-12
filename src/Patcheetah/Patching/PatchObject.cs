@@ -34,12 +34,12 @@ namespace Patcheetah.Patching
 
         public void ApplyTo(TEntity entity)
         {
-            PatchEngineCore.Patcher.Patch(entity, _patchProperties, _entityConfig);
+            EntityPatcher<TEntity>.Create().Patch(entity, _patchProperties, _entityConfig);
         }
 
         public TEntity CreateNewEntity()
         {
-            return PatchEngineCore.Patcher.BuildNew<TEntity>(_patchProperties, _entityConfig);
+            return EntityPatcher<TEntity>.Create().BuildNew(_patchProperties, _entityConfig);
         }
 
         public TEntity CreateNewEntity(object valueOfKeyProperty)
@@ -49,7 +49,7 @@ namespace Patcheetah.Patching
                 _patchProperties.Add(_entityConfig.KeyPropertyName, valueOfKeyProperty);
             }
 
-            return PatchEngineCore.Patcher.BuildNew<TEntity>(_patchProperties, _entityConfig);
+            return EntityPatcher<TEntity>.Create().BuildNew(_patchProperties, _entityConfig);
         }
 
         // IDictionary methods

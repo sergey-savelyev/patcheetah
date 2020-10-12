@@ -58,7 +58,9 @@ namespace Patcheetah.SystemText
                     return jsonElement.ToObject(type);
                 case JsonValueKind.String:
                     if (type.IsEnum)
-                        return Enum.Parse(type, jsonElement.GetString());
+                        return Enum.Parse(type, jsonElement.GetString(), true);
+                    if (type == typeof(DateTime))
+                        return DateTime.Parse(jsonElement.GetString());
                     return jsonElement.GetString();
                 default:
                     return value;
@@ -66,7 +68,7 @@ namespace Patcheetah.SystemText
 
         }
 
-        public T ResolveType<T>(object value)
+        public T ResolveJsonType<T>(object value)
         {
             return (T)ResolveType(value, typeof(T));
         }

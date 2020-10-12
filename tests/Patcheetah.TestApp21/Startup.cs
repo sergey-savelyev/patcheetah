@@ -5,7 +5,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json.Serialization;
 using Patcheetah.JsonNET;
-using Patcheetah.Swagger.NET21;
+using Patcheetah.Swagger;
+using System;
 
 namespace Patcheetah.TestApp21
 {
@@ -26,21 +27,33 @@ namespace Patcheetah.TestApp21
                 .AddJsonOptions(options => options.SerializerSettings.ContractResolver = new DefaultContractResolver());
             services.AddSwaggerGen(c =>
             {
-                c.SwaggerDoc("v1", new Swashbuckle.AspNetCore.Swagger.Info { Title = "SAB.API", Version = "v1" });
-
-                //var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
-                //var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
-                //c.IncludeXmlComments(xmlPath);
+                c.SwaggerDoc("v1", new Swashbuckle.AspNetCore.Swagger.Info { Title = "Patcheetah.API", Version = "v1" });
             });
             
             services.AddPatchObjectSwaggerSupport();
-           // services.AddSwaggerGenNewtonsoftSupport();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
         {
-            PatchEngine.Init(cfg => cfg.EnableAttributes());
+            PatchEngine.Init(cfg => 
+            {
+                cfg.EnableAttributes();
+                cfg.SetPrePatchProcessingFunction(context =>
+                {
+                    if (context.NewValue is long lng)
+                    {
+                        return Convert.ToInt32(lng);
+                    }
+
+                    if (context.NewValue is string str && (context.OldValue?.GetType()?.IsEnum ?? false))
+                    {
+                        return Enum.Parse(context.OldValue.GetType(), str, true);
+                    }
+
+                    return context.NewValue;
+                });
+            });
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
@@ -51,7 +64,7 @@ namespace Patcheetah.TestApp21
             app.UseSwagger();
             app.UseSwaggerUI(c =>
             {
-                c.SwaggerEndpoint("/swagger/v1/swagger.json", "SAB API V1");
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "Patcheetah API V1");
             });
         }
     }

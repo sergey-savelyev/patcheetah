@@ -5,6 +5,10 @@ namespace Patcheetah.TestApp31
 {
     public class WeatherForecast
     {
+        public WeatherForecast()
+        {
+        }
+
         public DateTime Date { get; set; }
 
         public int TemperatureC { get; set; }
@@ -16,7 +20,9 @@ namespace Patcheetah.TestApp31
         public string Summary { get; set; }
 
         [IgnoreOnPatching]
-        public EnTest EnTest { get; set; }
+        public string Ignored { get; set; }
+
+        public EnTest EnumTest { get; set; }
     }
 
     public enum EnTest

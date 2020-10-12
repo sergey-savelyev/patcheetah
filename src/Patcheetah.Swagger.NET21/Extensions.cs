@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using Patcheetah.Swagger.NET21;
 
-namespace Patcheetah.Swagger.NET21
+namespace Patcheetah.Swagger
 {
     public static class Extensions
     {
