@@ -4,7 +4,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
-using Patcheetah.Swashbuckle;
+using Patcheetah.Swagger.NET31;
 using Patcheetah.SystemText;
 
 namespace Patcheetah.TestApp31
@@ -30,7 +30,7 @@ namespace Patcheetah.TestApp31
                 //var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
                 //c.IncludeXmlComments(xmlPath);
             });
-            services.AddPatchObjectSwaggerSupportNET3();
+            services.AddPatchObjectSwaggerSupport();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

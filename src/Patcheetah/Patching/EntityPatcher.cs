@@ -149,7 +149,11 @@ namespace Patcheetah.Patching
         {
             try
             {
-                newValue = _jsonTypesResolver.ResolveType(newValue, property.PropertyType);
+                if (resolveType)
+                {
+                    newValue = _jsonTypesResolver.ResolveType(newValue, property.PropertyType);
+                }
+
                 property.SetValue(entityToPatch, newValue);
             }
             catch (ArgumentException ex)

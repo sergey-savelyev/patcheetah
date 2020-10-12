@@ -4,6 +4,8 @@ using Patcheetah.Tests.Models.WithAttributes;
 using NUnit.Framework;
 using Patcheetah.Mapping;
 using Patcheetah.Configuration;
+using System;
+using System.Diagnostics;
 
 namespace Patcheetah.Tests
 {
@@ -110,6 +112,34 @@ namespace Patcheetah.Tests
             // key overriding test
 
             KeyTest("Id");
+        }
+
+        [Test]
+        public void HighLoadTest()
+        {
+            Assert.Pass();
+
+            return;
+
+            var request = GetPatchRequestWithFields("Id", "Personal", "Login", "Username", "LastSeenFrom");
+            var limit = 1000000;
+            var stopwatch = new Stopwatch();
+            var entities = Enumerable.Range(0, limit).Select(x => new User
+            {
+                Id = Guid.NewGuid().ToString(),
+                PersonalInfo = null,
+                Login = Guid.NewGuid().ToString(),
+                Username = Guid.NewGuid().ToString(),
+                LastSeenFrom = Guid.NewGuid().ToString()
+            }).ToList();
+
+            stopwatch.Start();
+
+            entities.ForEach(x => request.ApplyTo(x));
+
+            stopwatch.Stop();
+
+            Assert.Less(stopwatch.ElapsedMilliseconds, 100000);
         }
     }
 }
