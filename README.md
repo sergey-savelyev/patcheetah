@@ -1,4 +1,5 @@
 <img src="patcheetah.png" height="100" alt="SimplePatch">
+A flexible, multi-platform and extensible solution for implementing partial patching in REST API.
 
 ## Summary
 - [Quick Start](#quick-start)
@@ -48,9 +49,11 @@ Why Patcheetah?
 
 - Really easy start. Only one parameterless call to start working;
 
-- Support of JSON.Net or System.Text.Json as parsing engines;
+- Support for .NET Core and .NET Framework;
 
-- Support of RFC7396 json-merge-patch standard;
+- Support for JSON.Net or System.Text.Json as parsing engines;
+
+- Support for RFC7396 json-merge-patch standard;
 
 - Useful helpers out of the box;
 
