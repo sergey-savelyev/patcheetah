@@ -1,5 +1,5 @@
 <img src="patcheetah.png" height="100" alt="SimplePatch">
-Flexible, multiplatform, and extendable solution for implementation of partial patching in REST-APIs
+A flexible, multi-platform and extensible solution for implementing partial patching in REST API.
 
 ## Summary
 - [Quick Start](#quick-start)
