@@ -1,5 +1,29 @@
 <img src="patcheetah.png" height="100" alt="SimplePatch">
 
+## Summary
+- [Quick Start](#quick-start)
+- [About](#about)
+- [Usage](#usage)
+   - [Initialization](#initialization)
+   - [Patching](#patching)
+- [Configuration](#configuration)
+   - [Case sensitivity](#case-sensitivity)
+   - [Nested patching (RFC7396)](#nested-patching-rfc7396)
+   - [Required properties](#required-properties)
+   - [Ignored properties](#ignored-properties)
+   - [Property aliases](#property-aliases)
+   - [Key properties and Upsert methods](#key-properties-and-upsert-methods)
+   - [Attributes](#attributes)
+   - [Mapping](#mapping)
+     - [Global mapping](#global-mapping)  
+     - [Specific type mapping](#specific-type-mapping)
+     - [Single property mapping](#single-property-mapping)
+     - [Mapping execution order](#mapping-execution-order)
+- [Extensions](#extensions)
+   - [Intervention into property patching](#intervention-into-property-patching)
+   - [Custom attributes](#custom-attributes)
+- [Swagger support](#swagger-support)
+     
 ## Quick start
 
 For using with JSON.NET (Newtonsoft.Json):
