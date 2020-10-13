@@ -1,6 +1,16 @@
 <img src="patcheetah.png" height="100" alt="SimplePatch">
 A flexible, multi-platform and extensible solution for implementing partial patching in REST API.
 
+
+[![Nuget](https://img.shields.io/nuget/v/Patcheetah.JsonNET.svg)](https://www.nuget.org/packages/Patcheetah.JsonNET) - [Patcheetah.JsonNET](https://www.nuget.org/packages/Patcheetah.JsonNET) | .NET Core 2.1/3.1 | .NET Framework 4.5+
+
+[![Nuget](https://img.shields.io/nuget/v/Patcheetah.SystemText.svg)](https://www.nuget.org/packages/Patcheetah.SystemText) - [Patcheetah.SystemText](https://www.nuget.org/packages/Patcheetah.SystemText) | .NET Core 3.1 
+
+[![Nuget](https://img.shields.io/nuget/v/Patcheetah.Swagger.NET21.svg)](https://www.nuget.org/packages/Patcheetah.Swagger.NET21) - [Patcheetah.Swagger.NET21](https://www.nuget.org/packages/Patcheetah.Swagger.NET21) | Swagger support for .NET Core 2.1 
+
+[![Nuget](https://img.shields.io/nuget/v/Patcheetah.Swagger.NET31.svg)](https://www.nuget.org/packages/Patcheetah.Swagger.NET31) - [Patcheetah.Swagger.NET31](https://www.nuget.org/packages/Patcheetah.Swagger.NET31) | Swagger support for .NET Core 3.1 
+
+
 ## Summary
 - [Quick Start](#quick-start)
 - [About](#about)
@@ -27,7 +37,7 @@ A flexible, multi-platform and extensible solution for implementing partial patc
      
 ## Quick start
 
-For using with JSON.NET (Newtonsoft.Json) (.NET Core 2.1 / .NET Framework 4.5+):
+For using with JSON.NET (Newtonsoft.Json) (.NET Core 2.1/3.1 | .NET Framework 4.5+):
 
     PM> Install-Package Patcheetah.JsonNET
 
