@@ -2,6 +2,13 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
+    <PackageProjectUrl>https://github.com/sergey-savelyev/patcheetah</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/sergey-savelyev/patcheetah.git</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>asp-net-core;asp-net-core-2;asp-net-core-3;asp-net-core-web-api;asp-net-web-api;asp-net-web-api-2;http-patch;partial-entity-changes;json-merge-patch;rfc7396;rfc-7396;partial-patch</PackageTags>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Company />
+    <Authors>Sergey Savelyev</Authors>
   </PropertyGroup>
 
   <ItemGroup>

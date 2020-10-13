@@ -18,6 +18,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Patcheetah.Swagger.NET21", 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Patcheetah.Swagger.NET31", "src\Patcheetah.Swagger.NET31\Patcheetah.Swagger.NET31.csproj", "{E60B203D-0052-4446-A797-2C19EF10A1EC}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Patcheetah.TestApp472", "tests\Patcheetah.TestApp472\Patcheetah.TestApp472.csproj", "{340FE781-65A2-4AAB-9376-3E6DF5BE33CE}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -56,6 +58,10 @@ Global
 		{E60B203D-0052-4446-A797-2C19EF10A1EC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E60B203D-0052-4446-A797-2C19EF10A1EC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E60B203D-0052-4446-A797-2C19EF10A1EC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{340FE781-65A2-4AAB-9376-3E6DF5BE33CE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{340FE781-65A2-4AAB-9376-3E6DF5BE33CE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{340FE781-65A2-4AAB-9376-3E6DF5BE33CE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{340FE781-65A2-4AAB-9376-3E6DF5BE33CE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
