@@ -69,22 +69,22 @@ Why Patcheetah?
 You don't need any special configurations tofor start to use Patcheetah. All that you need is `PatchEngine.Init()`; call somewhere in `Startup.cs` or `Global.asax`.
 
 #### Patching
+```C#
+[HttpPatch("{id}")]
+public async Task<IActionResult> PatchOne(PatchObject<User> patch)
+{
+	var userToPatch = await _usersProvider.TryGet(patch.GetValue(x => x.Id));
 
-    [HttpPatch("{id}")]
-    public async Task<IActionResult> PatchOne(PatchObject<User> patch)
-    {
-    	var userToPatch = await _usersProvider.TryGet(patch.GetValue(x => x.Id));
-    	
-    	if (userToPatch == null)
-    	{
-    		return BadRequest("User not found");
-    	} 
-    
-    	patch.ApplyTo(userToPatch);
-    
-    	return Ok(userToPatch);
-    }
+	if (userToPatch == null)
+	{
+		return BadRequest("User not found");
+	} 
 
+	patch.ApplyTo(userToPatch);
+
+	return Ok(userToPatch);
+}
+```
 ## Configuration
 
 Let's talk about the default configuration first.
@@ -96,103 +96,112 @@ The default settings are as follows:
  - Attributes are disabled.
  
 To configure patch engine use parametrised overload of default method `PatchEngine.Init()`.
-
-    PatchEngine.Init(config =>
-    {
-	    config.SetCaseSensitivity(true);
-    	config
-    		.ConfigureEntity<User>()
-    		.Required(x => x.LastSeenFrom)
-    		.IgnoreOnPatching(x => x.Login)
-    		.UseJsonAlias(x => x.PersonalInfo, "Personal")
-    		.SetKey(x => x.Id);
-    });
+```C#
+PatchEngine.Init(config =>
+{
+    config.SetCaseSensitivity(true);
+    config
+        .ConfigureEntity<User>()
+		.Required(x => x.LastSeenFrom)
+		.IgnoreOnPatching(x => x.Login)
+		.UseJsonAlias(x => x.PersonalInfo, "Personal")
+		.SetKey(x => x.Id);
+});
+ ```
 ### Case sensitivity
 In Patcheetah you have two levels of case sensitivity configuration. 
 The first level is global case sensitivity. 
-
-    PatchEngine.Init(config =>
-    {
-    	config.SetCaseSensitivity(true);
-    });
+```C#
+PatchEngine.Init(config =>
+{
+	config.SetCaseSensitivity(true);
+});
+```
 Keep in mind that global parameter has lower priority than the same single entity parameter. 
 The second level is a case sensistivity of single entity. It can be setup during entity configuration method calling. Just pass bool value as parameter.
-
-    PatchEngine.Init(config =>
-    {
-    	config.ConfigureEntity<User>(true);
-    });
+```C#
+PatchEngine.Init(config =>
+{
+	config.ConfigureEntity<User>(true);
+});
+```
 ### Nested patching (RFC7396)
 Patcheetah supports nested patching according to RFC7396 standard.
 You can read more about that standard here.
 To enable nested patching just use `EnableNestedPatching()` method in patch config.
-
-    PatchEngine.Init(config =>
-    {
-    	config.EnableNestedPatching();
-    });
+```C#
+PatchEngine.Init(config =>
+{
+	config.EnableNestedPatching();
+});
+```
 **If nested property type has been configured, nested patching performs according to config rules.**
 
 ### Required properties
 If you want to make some properties required in patch request, you can use `Required(propExpression)` method which is available in the entity's configuration method chain. If required property missed in patch request, `RequiredPropertiesMissedException` throws.
-
-    PatchEngine.Init(config =>
-    {
-    	config
-	    	.ConfigureEntity<User>()
-    		.Required(x => x.LastSeenFrom);
-    });
+```C#
+PatchEngine.Init(config =>
+{
+	config
+		.ConfigureEntity<User>()
+		.Required(x => x.LastSeenFrom);
+});
+```
 ### Ignored properties
 Some properties can be skipped during patching. Even if the request contains them, they're ignored. To enable this feature use `IgnoreOnPatching(propExpression)` method which is available in the entity's configuration method chain.
-
-    PatchEngine.Init(config =>
-    {
-    	config
-        	.ConfigureEntity<User>()
-    		.IgnoreOnPatching(x => x.Login);
-    });
+```C#
+PatchEngine.Init(config =>
+{
+	config
+		.ConfigureEntity<User>()
+		.IgnoreOnPatching(x => x.Login);
+});
+```
 ### Property aliases
 Sometimes we need to do a trick with json property names substitution. E.g. Json.NET (Newtonsoft.Json) has an attribute `JsonProperty(propAlias)` that allows to use different names in json object and serialized C# object. Patcheetah has a special method for you to do the same.
-
-    PatchEngine.Init(config =>
-    {
-    	config
-        	.ConfigureEntity<User>()
-    		.UseJsonAlias(x => x.PersonalInfo, "Personal");
-    });
-    
+```C#
+PatchEngine.Init(config =>
+{
+	config
+		.ConfigureEntity<User>()
+		.UseJsonAlias(x => x.PersonalInfo, "Personal");
+});
+```
 ### Key properties and Upsert methods
 Key properties is not an necessary killer-feature, but useful helper. If you use classic standard approach of patching that looks like this
-
-    [HttpPatch("{id}")]
-    public IActionResult Patch([FromRoute] string id, PatchObject<User> patch)
-    {
-	    ...
-	}
+```C#
+[HttpPatch("{id}")]
+public IActionResult Patch([FromRoute] string id, PatchObject<User> patch)
+{
+	// ...
+}
+```
 maybe you don't need this feature. But if instead you're using the Upsert approach, which is incredibly handy for your small home projects, you absolutely need this feature. 
 In most cases, our entities have an Id (more precisely, a key). You can set a key property to use it in Upsert methods or other appropriate situations.
-
-    PatchEngine.Init(config =>
-    {
-    	config
-        	.ConfigureEntity<User>()
-    		.SetKey(x => x.Id);
-    });
+```C#
+PatchEngine.Init(config =>
+{
+	config
+		.ConfigureEntity<User>()
+		.SetKey(x => x.Id);
+});
+```
 Then in Upsert, you can use the `HasKey` property to determine if your patch request has a key or not.
-
-    [HttpPatch("{id}")]
-    public IActionResult Patch(PatchObject<User> patch)
-    {
-        if (patch.HasKey)
-        {
-	        var entityToPatch = _usersService.Get(patch.GetValue(x => x.Id);
-	        patch.ApplyTo(entityToPatch);
-	        return Ok();
-	    }
-		var newUser = entityToPatch.CreateNewEntity(Guid.NewGuid().ToString());
-		_usersService.Create(newUser);
+```C#
+[HttpPatch("{id}")]
+public IActionResult Patch(PatchObject<User> patch)
+{
+	if (patch.HasKey)
+	{
+		var entityToPatch = _usersService.Get(patch.GetValue(x => x.Id);
+		patch.ApplyTo(entityToPatch);
 		return Ok();
-    }
+	}
+	var newUser = entityToPatch.CreateNewEntity(Guid.NewGuid().ToString());
+	_usersService.Create(newUser);
+	return Ok();
+}
+```
 The `HasKey` property returns false if the property specified as a key has no value in the patch request. If so, you can use the `CreateNewEntity(keyPropertyValue)` method to create the entity from scratch and populate all the fields contained in the patch request. You can also set the value of the key property of the new entity by passing it as a parameter to this method. Be aware that if a patch request has this property value, it is overwritten. If you don't need to set the key, use parameterless overload `CreateNewEntity()`.
 
 ### Attributes
@@ -220,42 +229,46 @@ Sometimes it's not enough to just patch. What if you need to dynamically change 
  - Single property mapping.
 
 ##### Global mapping
-
-    PatchEngine.Init(config =>
-    {
-    	config.SetGlobalMapping(val => 
-    	{
-	    	if (val is double doubleVal)
-	    	{
-		    	var rounded = Math.Round(doubleVal, 2);
-		    	return MappingResult.MapTo(rounded);
-		    }
-		    return MappingResult.Skip(val);
-    	});
-    });
+```C#
+PatchEngine.Init(config =>
+{
+	config.SetGlobalMapping(val => 
+	{
+		if (val is double doubleVal)
+		{
+			var rounded = Math.Round(doubleVal, 2);
+			return MappingResult.MapTo(rounded);
+		}
+		return MappingResult.Skip(val);
+	});
+});
+```
  Be aware that global mapping executes every property patch case.
  
  ##### Specific type mapping
-
-    PatchEngine.Init(config =>
-    {
-    	config.SetMappingForType<double>(val => 
-    	{
-        	var rounded = Math.Round(val , 2);
-        	return MappingResult.MapTo(rounded);
-    	});
-    });
+```C#
+PatchEngine.Init(config =>
+{
+	config.SetMappingForType<double>(val => 
+	{
+		var rounded = Math.Round(val , 2);
+		return MappingResult.MapTo(rounded);
+	});
+});
+```
 ##### Single property mapping
-    PatchEngine.Init(config =>
-    {
-    	config
-        	.ConfigureEntity<Product>()
-    		.UseMapping(x => x.Price, val => 
-	    	{
-	        	var rounded = Math.Round(val, 2);
-	        	return MappingResult.MapTo(rounded);
-	    	});
-    });
+```C#
+PatchEngine.Init(config =>
+{
+	config
+		.ConfigureEntity<Product>()
+		.UseMapping(x => x.Price, val => 
+		{
+			var rounded = Math.Round(val, 2);
+			return MappingResult.MapTo(rounded);
+		});
+});
+```
 ##### Mapping execution order
 Global mapping => Specific type mapping => Single entity mapping
 
@@ -278,24 +291,25 @@ If property is configured:
  
 As you can see, we have a special place for intervention into patch process. Let's take a closer look.
 `PrePatchProcessingFunction` is similar with mapping, but it calls earlier and has access to propery config, old property value and patched entity. You can look at this as an advanced version of the mapping.
+```C#
+PatchEngine.Init(config =>
+{
+	config
+		.SetPrePatchProcessingFunction(context =>
+		{
+			if (context.Entity is AuctionLot && context.PropertyConfiguration.Name == "Price")
+			{
 
-        PatchEngine.Init(config =>
-        {
-        	config
-            	.SetPrePatchProcessingFunction(context =>
-    	    	{
-	    	    	if (context.Entity is AuctionLot && context.PropertyConfiguration.Name == "Price")
-	    	    	{
-	    	    	
-					    if ((decimal)context.NewValue < (decimal)context.OldValue)
-					    {
-						    throw new Exception("New auction lot price can't be less than previous!");
-						}
-	    	        	
-	    	        	return context.NewValue;
-	    	        }
-    	    	});
-        });
+				if ((decimal)context.NewValue < (decimal)context.OldValue)
+				{
+					throw new Exception("New auction lot price can't be less than previous!");
+				}
+
+				return context.NewValue;
+			}
+		});
+});
+```
 `PrePatchProcessingFunction` accepts the `PatchContext` parameter that has `NewValue`, `OldValue`, `Entity` and `PropertyConfiguration` fields. Returned value of this method should be a new value for property (modified or not).
 
 `PrePatchProcessingFunction` was designed for custom attributes logic execution, but you can use it however you want. **But be careful, overweight of this method can create performance problems, and careless handling can damage your data. Use this functionality wisely!**
@@ -310,82 +324,87 @@ Steps:
  - Read your attributes and do some actions via `PrePatchProcessingFunction`.
 
 In one of previous examples we rounded digits using mapping. But what if we need to round values ​​in several properties of different entities? Let's create an attribute that will do this.
+```C#
+[AttributeUsage(AttributeTargets.Property)]
+public RoundValueAttribute : Attribute
+{
+	public const string PARAMETER_NAME = "RoundValue";
+	public int Precision { get; }
 
-	[AttributeUsage(AttributeTargets.Property)]
-	public RoundValueAttribute : Attribute
+	public RoundValueAttribute(int precision)
 	{
-		public const string PARAMETER_NAME = "RoundValue";
-		public int Precision { get; }
-
-		public RoundValueAttribute(int precision)
+		Precision = precision;
+	}
+}
+```
+Then we need to create an implementation of `ICustomAttributesConfigurator`. It's a special interface with only one method Configure that will be called on property configuring process.
+```C#
+public class CustomAttributesConfigurator : ICustomAttributesConfigurator
+{
+	public void Configure(PropertyInfo property, IEnumerable<Attribute> propertyAttributes, EntityConfigAccessor configAccessor)
+	{
+		var roundAttribute = propertyAttributes.FirstOrDefault(attr => attr is RoundValueAttribute);
+		if (roundAttribute != null)
 		{
-			Precision = precision;
+			configAccessor
+				.GetPropertyConfiguration(property.Name)
+				.ExtraSettings
+				.Add(RoundValueAttribute.PARAMETER_NAME, (roundAttribute as RoundValueAttribute).Precision);
 		}
 	}
-Then we need to create an implementation of `ICustomAttributesConfigurator`. It's a special interface with only one method Configure that will be called on property configuring process.
-
-    public class CustomAttributesConfigurator : ICustomAttributesConfigurator
-    {
-    	public void Configure(PropertyInfo property, IEnumerable<Attribute> propertyAttributes, EntityConfigAccessor configAccessor)
-    	{
-    		var roundAttribute = propertyAttributes.FirstOrDefault(attr => attr is RoundValueAttribute);
-    		if (roundAttribute != null)
-    		{
-    			configAccessor
-    				.GetPropertyConfiguration(property.Name)
-    				.ExtraSettings
-    				.Add(RoundValueAttribute.PARAMETER_NAME, (roundAttribute as RoundValueAttribute).Precision);
-    		}
-    	}
-    }
+}
+```
 As you can see, we are using the `GetPropertyConfiguration(propName)` method to access the configuration of the property we need. The property configuration has a special `ExtraSettings` property, which is of type `Dictionary<string, object>` and which represents a storage for your additional settings. You can get access to it in `PrePatchProcessingFunction`  and do any business with it.
+```C#
+PatchEngine.Init(config =>
+{
+	config
+		.SetPrePatchProcessingFunction(context =>
+		{
+			if (context.PropertyConfiguration.ExtraSettings.ContainsKey(RoundValueAttribute.PARAMETER_NAME))
+			{
+				if (!(context.NewValue is double))
+				{
+					return context.NewValue;
+				}
 
-    PatchEngine.Init(config =>
-    {
-    	config
-    		.SetPrePatchProcessingFunction((oldVal, newVal, entity, propConfig) =>
-    	    {
-	    	    if (propConfig.ExtraSettings.ContainsKey(RoundValueAttribute.PARAMETER_NAME))
-	    	    {
-		    	    if (!(newValis double))
-			    	{
-				    	return newVal;
-			    	}
-			    	
-		    	    var precision = (int)propConfig.ExtraSettings[RoundValueAttribute.PARAMETER_NAME];
-		    	    
-		    	    return Math.Round((double)newVal, precision);
-	    	    }
-				
-				return newVal;
-    	    });
-    });
+				var precision = (int)context.PropertyConfiguration.ExtraSettings[RoundValueAttribute.PARAMETER_NAME];
+
+				return Math.Round((double)context.NewValue, precision);
+			}
+
+			return context.NewValue;
+		});
+});
+```
 In this example, we check that the `ExtraSettings` dictionary contains a parameter named "RoundValue". If so, we get its value as the precision for rounding. After that, if the new value is of the correct type, we return it rounded. Otherwise, an unchanged value will be returned.
 Now you can use your new attribute in your classes.
+```C#
+public class Route
+{
+	public string Id { get; set; }
 
-    public class Route
-    {
-    	public string Id { get; set; }
-    	
-    	public string Title { get; set; }
-    	
-    	public string StartPoint { get; set; }
-    	
-    	public string DestinationPoint { get; set; }
-    	
-    	[RoundValue(2)]
-    	public double Distance { get; set; }
-    }
+	public string Title { get; set; }
+
+	public string StartPoint { get; set; }
+
+	public string DestinationPoint { get; set; }
+
+	[RoundValue(2)]
+	public double Distance { get; set; }
+}
+```
 Gongratulations, that's all! The `Distance` property value will be rounded to two decimal places on patching.
 
 ## Swagger support
 Since `PatchObject<T>` implements the `IDictionary<string, object>` interface, it can't be parsed by swagger schema generator correctly. Instead of description of the model used as generic parameter, you will see something like this:
-
-    {
-    	"prop1": "string",
-    	"prop2": "string",
-    	"prop3": "string"
-    }
+```
+{
+	"prop1": "string",
+	"prop2": "string",
+	"prop3": "string"
+}
+```
 Not very clear, right?
 To fix that issue you need to follow 2 steps:
 
