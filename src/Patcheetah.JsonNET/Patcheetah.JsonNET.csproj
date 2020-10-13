@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <Title>Patcheetah.JsonNET</Title>
     <PackageProjectUrl>https://github.com/sergey-savelyev/patcheetah</PackageProjectUrl>
     <RepositoryUrl>https://github.com/sergey-savelyev/patcheetah.git</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
@@ -9,14 +10,25 @@
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Company />
     <Authors>Sergey Savelyev</Authors>
+    <Description>A flexible, multi-platform and extensible solution for implementing partial patching in REST API.
+This is JsonNET (Newtonsoft.Json) based version. Compatible with .NET Core and .NET Framework.</Description>
+    <PackageLicenseFile>LICENSE.TXT</PackageLicenseFile>
+    <PackageReleaseNotes>Release 1.0.0</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+    <PackageReference Include="Newtonsoft.Json" Version="10.0.1" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Patcheetah\Patcheetah.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\LICENSE.TXT">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
   </ItemGroup>
 
 </Project>

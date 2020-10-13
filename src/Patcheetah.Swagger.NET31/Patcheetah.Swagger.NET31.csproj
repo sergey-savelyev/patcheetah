@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <Title>Patcheetah.Swagger.NET31</Title>
     <PackageProjectUrl>https://github.com/sergey-savelyev/patcheetah</PackageProjectUrl>
     <RepositoryUrl>https://github.com/sergey-savelyev/patcheetah.git</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
@@ -9,6 +10,9 @@
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Company />
     <Authors>Sergey Savelyev</Authors>
+    <Description>Swagger support for Patcheetah. Version for .NET Core 3.1.</Description>
+    <PackageLicenseFile>LICENSE.TXT</PackageLicenseFile>
+    <PackageReleaseNotes>Release 1.0.0</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
@@ -17,6 +21,13 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Patcheetah\Patcheetah.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\LICENSE.TXT">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
   </ItemGroup>
 
 </Project>

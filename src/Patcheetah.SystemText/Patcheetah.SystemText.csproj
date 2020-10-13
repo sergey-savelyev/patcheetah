@@ -8,7 +8,11 @@
     <PackageTags>asp-net-core;asp-net-core-2;asp-net-core-3;asp-net-core-web-api;asp-net-web-api;asp-net-web-api-2;http-patch;partial-entity-changes;json-merge-patch;rfc7396;rfc-7396;partial-patch</PackageTags>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Company />
+    <Title>Patcheetah.SystemText</Title>
     <Authors>Sergey Savelyev</Authors>
+    <Description>A flexible, multi-platform and extensible solution for implementing partial patching in REST API. This is System.Text.Json based version. Compatible with .NET Core 3.1.</Description>
+    <PackageLicenseFile>LICENSE.TXT</PackageLicenseFile>
+    <PackageReleaseNotes>Release 1.0.0</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
@@ -17,6 +21,13 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Patcheetah\Patcheetah.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\LICENSE.TXT">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
   </ItemGroup>
 
 </Project>
