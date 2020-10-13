@@ -26,11 +26,11 @@
      
 ## Quick start
 
-For using with JSON.NET (Newtonsoft.Json):
+For using with JSON.NET (Newtonsoft.Json) (.NET Core 2.1 / .NET Framework 4.5+):
 
     PM> Install-Package Patcheetah.JsonNET
 
-For using with System.Text.Json:
+For using with System.Text.Json (.NET Core 3.1):
 
     PM> Install-Package Patcheetah.SystemText
 
