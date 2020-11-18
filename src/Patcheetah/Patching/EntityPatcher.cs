@@ -72,6 +72,8 @@ namespace Patcheetah.Patching
             var propertyConfig = config?[property.Name];
             var propertyName = propertyConfig?.Name ?? property.Name;
 
+            if (propertyName.StartsWith("_")) propertyName = propertyName.TrimStart('_');  //this fixes where propertyNames have had an underscore appended (because of numeric values in JSON) but will break any properties which actually start with underscore!
+
             if (!patchData.ContainsKey(propertyName))
             {
                 return;
