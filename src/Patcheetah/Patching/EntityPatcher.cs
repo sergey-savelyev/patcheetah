@@ -157,12 +157,38 @@ namespace Patcheetah.Patching
                     newValue = _jsonTypesResolver.ResolveType(newValue, property.PropertyType);
                 }
 
-                property.SetValue(entityToPatch, newValue);
+                //find the property type
+                Type propertyType = property.PropertyType;
+
+                //null value handling
+                if (newValue == null)
+                {
+                    if (IsNullableType(propertyType)) property.SetValue(entityToPatch, null);  //where property is nullable, we can set null
+                    else throw new ArgumentNullException($"Cannot set property {property.Name} to null");
+                }
+                else
+                {
+                    //Convert.ChangeType does not handle conversion to nullable types
+                    //if the property type is nullable, we need to get the underlying type of the property
+                    var targetType = IsNullableType(propertyType) ? Nullable.GetUnderlyingType(propertyType) : propertyType;
+
+                    //Returns an System.Object with the specified System.Type and whose value is
+                    //equivalent to the specified object.
+                    newValue = Convert.ChangeType(newValue, targetType);
+
+                    property.SetValue(entityToPatch, newValue);
+                }
+
             }
             catch (ArgumentException ex)
             {
                 throw new TypeMissmatchException(newValue.GetType().Name, property.PropertyType.Name, property.Name, ex);
             }
+        }
+
+        private static bool IsNullableType(Type type)
+        {
+            return type.IsGenericType && type.GetGenericTypeDefinition().Equals(typeof(Nullable<>));
         }
 
         private object PatchNested(object newValue, object oldValue, PropertyInfo property)
