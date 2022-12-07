@@ -17,7 +17,7 @@ This is JsonNET (Newtonsoft.Json) based version. Compatible with .NET Core and .
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Newtonsoft.Json" Version="10.0.1" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
   </ItemGroup>
 
   <ItemGroup>
